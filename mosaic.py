@@ -53,7 +53,7 @@ def main():
             # pt = matrix.dot(HOMOGENEOUS_COORDINATE)
             # print pt
             pt = matrix.dot([[159], [188], [1]])
-            print pt
+            print "First point map", pt
             # pt = matrix.dot([[599], [146], [1]])
             # print pt
             origin = matrix.dot(HOMOGENEOUS_COORDINATE)
@@ -93,7 +93,27 @@ def main():
     destroyAllWindows()
 
 def getPerspectiveTransformMatrix(p1, p2):
-    return getPerspectiveTransform(p1, p2)
+    # OpenCV Method
+    # return getPerspectiveTransform(p1, p2)
+    matrixIndex = 0
+    A = np.zeros((8, 9))
+    for i in range(0, len(p1)):
+        x = p1[i][0]
+        y = p1[i][1]
+
+        u = p2[i][0]
+        v = p2[i][1]
+
+        A[matrixIndex] = [0, 0, 0, -x, -y, -1, v*x, v*y, v]
+        A[matrixIndex + 1] = [x, y, 1, 0, 0, 0, -u*x, -u*y, -u]
+
+        matrixIndex = matrixIndex + 2
+
+    U, s, V = np.linalg.svd(A, full_matrices=True)
+    matrix = V[:, 8].reshape(3, 3)
+    # Normalization
+    matrix = matrix / matrix[2][2]
+    return matrix
 
 def applyTransformationMatrix(image, matrix, outputSize):
     return warpPerspective(image, matrix, outputSize)
