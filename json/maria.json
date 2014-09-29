@@ -1,29 +1,23 @@
-def getFolder():
-    return 'maria_room'
-
-def getImages():
-    return [
-        'images/' + getFolder() +'/1.jpg',
-        'images/' + getFolder() + '/2.jpg',
-        'images/' + getFolder() + '/3.jpg'
-    ]
-
-def getPoints(np):
-    points = {
-        1: [
+{
+    "name": "maria_room",
+    "np": 4,
+    "method": "ndlt",
+    "output": "out/maria_room.png",
+    "images": [
+        "images/maria_room/1.jpg",
+        "images/maria_room/2.jpg",
+        "images/maria_room/3.jpg"
+    ],
+    "relations": [
+        [
             [[618, 163], [762, 157], [613, 340], [752, 346], [930, 217], [1000, 216], [924, 316], [993, 317], [478, 262], [477, 332]],
             [[213, 125], [360, 131], [217, 313], [362, 318], [513, 196], [572, 197], [511, 288], [569, 290], [58, 226], [59, 306]],
-            None # matrix
+            null
         ],
-        2: [
+        [
             [[493, 175], [593, 176], [490, 308], [589, 310], [762, 184], [751, 397], [716, 455], [721, 497], [525, 247], [538, 220]],
             [[85, 146], [203, 152], [92, 294], [206, 295], [378, 166], [381, 377], [350, 436], [357, 478], [129, 227], [142, 197]],
-            None # matrix
+            null
         ]
-    }
-
-    for index in points:
-        points[index][0] = points[index][0][0:np]
-        points[index][1] = points[index][1][0:np]
-
-    return points
+    ]
+}

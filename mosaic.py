@@ -1,28 +1,21 @@
 import numpy as np
-import timeit
-import uff
-import uff_vert
-import maria
-import sys
+import timeit, uff, uff_vert, maria, sys, json
 from cv2 import *
 
-collection = uff
-
 def main(args):
-    print "Arguments", args
-    print "Collection", collection.getFolder()
-
-    method = args['method']
-    n = args['np']
-
-    imgs = collection.getImages()
-
+    imgs = args['images']
+    # Loading images
     for i, imgPath in enumerate(imgs):
         imgs[i] = imread(imgPath)
 
+    print "Collection", args['name']
     print "Processing", len(imgs), "images"
 
-    points = collection.getPoints(n)
+    # Truncating points
+    points = args['relations']
+    for index, point in enumerate(points):
+        points[index][0] = points[index][0][0:args['np']]
+        points[index][1] = points[index][1][0:args['np']]
 
     imageBuffer = result = np.zeros((10000, 20000, 3), np.uint8)
 
@@ -35,10 +28,10 @@ def main(args):
                 for column in range(0, w):
                     imageBuffer[row + 2000][column + 2000] = img[row][column]
         else:
-            matrix = getHomography(method, points[i][1], points[i][0], imgs[i - 1], img)
+            matrix = getHomography(args['method'], points[i - 1][1], points[i - 1][0], imgs[i - 1], img)
             if(i >= 2):
-                matrix = points[i - 1][2].dot(matrix)
-            points[i][2] = matrix
+                matrix = points[i - 2][2].dot(matrix)
+            points[i - 1][2] = matrix
             inverseMatrix = np.linalg.inv(matrix)
 
             # Bound of the new image
@@ -71,7 +64,13 @@ def main(args):
                     if (width > transformPoint[0][0] >= 0) and (height > transformPoint[1][0] >= 0):
                             imageBuffer[pt[1][0] + 2000][pt[0][0] + 2000] = img[transformPoint[1][0]][transformPoint[0][0]]
 
-    imwrite("images/" + collection.getFolder() + "/" + str(len(imgs)) + "_" + method + "_mosaic_" + str(n) + ".png", imageBuffer)
+    pathToJoin = args['output'].split('/')
+    fileName = str(len(imgs)) + "_" + args['method'] + "_" + str(args['np']) + "_" + pathToJoin.pop()
+    pathToJoin.append(fileName)
+    saveDir = "/".join(pathToJoin)
+
+    print "Saving to", saveDir
+    imwrite(saveDir, imageBuffer)
 
 def getHomography(method, p1, p2, img1, img2):
     if(method == 'dlt'):
@@ -139,22 +138,13 @@ def dltNorm(p1, p2, img1, img2):
     return H
 
 def argsProcess(args):
-    if '-method' in args:
-        methodIndex = args.index('-method')
-        met = args[methodIndex + 1]
+    if '-file' in args:
+        fileIndex = args.index('-file')
+        fileName = args[fileIndex + 1]
+        return json.load(open(fileName))
     else:
-        met = 'ndlt' # Default method
-
-    if '-np' in args:
-        npIndex = args.index('-np')
-        n = int(args[npIndex + 1])
-    else:
-        n = 4 # Default number of points
-
-    return {
-        'method': met,
-        'np': n
-    }
+        print "Please pass the file parameter. Ex: -file filename.json"
+        sys.exit()
 
 start = timeit.default_timer()
 main(argsProcess(sys.argv))
