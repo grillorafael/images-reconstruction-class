@@ -81,31 +81,6 @@ float distanceBetween(cv::Point p1, cv::Point p2) {
 	return sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2));
 }
 
-
-// void process(int threadNumber, int totalThreads, cv::Size outputSize, cv::Mat* output) {
-//     int from = ((outputSize.height / totalThreads) * threadNumber) + WINDOW_SIZE;
-//     int to = from + (outputSize.height / totalThreads);
-//
-//     if(threadNumber == totalThreads - 1) {
-//         to = to - WINDOW_SIZE;
-//     }
-//
-//     int row, column;
-//     for(row = from; row < to; row++) {
-//         std::cout << "[" << threadNumber << "]" << ((row * 100) / outputSize.height) << "%\n";
-//         std::cout.flush();
-//         for(column = WINDOW_SIZE; column < outputSize.width - WINDOW_SIZE; column++) {
-//             cv::Point currentPosition = cv::Point(column, row);
-//             cv::Point bestMatch = getBestMatch(currentPosition);
-//             float disparity = distanceBetween(currentPosition, bestMatch);
-//             output->at<uchar>(row + WINDOW_SIZE, column + WINDOW_SIZE) = disparity;
-//             // if(disparity > biggest) {
-//             //     biggest = disparity;
-//             // }
-//         }
-//     }
-// }
-
 int main(int argc, char** argv) {
 	clock_t begin = clock();
 
@@ -117,34 +92,21 @@ int main(int argc, char** argv) {
 	int row, column;
 
     std::cout << "Calculating disparity map...\n";
-    std::thread worker0(process, 0, 2, outputSize, &output);
-    std::thread worker1(process, 1, 2, outputSize, &output);
-    // std::thread worker2(process, 2, 6, outputSize, &output);
-    // std::thread worker3(process, 3, 6, outputSize, &output);
-    // std::thread worker4(process, 4, 6, outputSize, &output);
-    // std::thread worker5(process, 5, 6, outputSize, &output);
-    worker0.join();
-    worker1.join();
-    // worker2.join();
-    // worker3.join();
-    // worker4.join();
-    // worker5.join();
 
-	// float biggest = 0;
-    // #pragma omp parallel for
-	// for(row = WINDOW_SIZE; row < outputSize.height - WINDOW_SIZE; row++) {
-    //     std::cout << "\r" << ((row * 100) / outputSize.height) << "% ";
-    //     std::cout.flush();
-	// 	for(column = WINDOW_SIZE; column < outputSize.width - WINDOW_SIZE; column++) {
-	// 		cv::Point currentPosition = cv::Point(column, row);
-	// 		cv::Point bestMatch = getBestMatch(currentPosition);
-	// 		float disparity = distanceBetween(currentPosition, bestMatch);
-	// 		output.at<uchar>(row + WINDOW_SIZE, column + WINDOW_SIZE) = disparity;
-	// 		if(disparity > biggest) {
-	// 			biggest = disparity;
-	// 		}
-	// 	}
-	// }
+	float biggest = 0;
+	for(row = WINDOW_SIZE; row < outputSize.height - WINDOW_SIZE; row++) {
+        std::cout << "\r" << ((row * 100) / outputSize.height) << "% ";
+        std::cout.flush();
+		for(column = WINDOW_SIZE; column < outputSize.width - WINDOW_SIZE; column++) {
+			cv::Point currentPosition = cv::Point(column, row);
+			cv::Point bestMatch = getBestMatch(currentPosition);
+			float disparity = distanceBetween(currentPosition, bestMatch);
+			output.at<uchar>(row + WINDOW_SIZE, column + WINDOW_SIZE) = disparity;
+			if(disparity > biggest) {
+				biggest = disparity;
+			}
+		}
+	}
 
 	// output = output / biggest;
 	// output = output * 255;
