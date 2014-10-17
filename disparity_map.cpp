@@ -2,10 +2,11 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <ctime>
-
-#define WINDOW_SIZE 9
+// Best result SAD with Windows 7
+#define WINDOW_SIZE 7
 #define DISPARITY_INTERVAL 15
 #define SET "tsukuba"
+#define METHOD "sad"
 //TEDDY 59
 //CONES 59
 //VENUS 19
@@ -19,7 +20,8 @@ cv::Mat image1 = cv::imread(IMAGES_PATH + SET + "/imL.png", CV_LOAD_IMAGE_GRAYSC
 cv::Mat addWindowFrames(cv::Mat image);
 cv::Point getBestMatch(cv::Point currentPosition);
 double ssdValue(cv::Point currentPosition, cv::Point position);
-double getValue(std::string method, cv::Point currentPosition, cv::Point position);
+double sadValue(cv::Point currentPosition, cv::Point position);
+double getValue(cv::Point currentPosition, cv::Point position);
 float distanceBetween(cv::Point p1, cv::Point p2);
 
 cv::Mat removeWindowFrames(cv::Mat image) {
@@ -70,7 +72,7 @@ cv::Point getBestMatch(cv::Point currentPosition) {
 	cv::Size imageSize = image0.size();
 //	for(int column = WINDOW_SIZE; column < imageSize.width - WINDOW_SIZE; column++) {
 	for(int column = currentPosition.x; column <= currentPosition.x + DISPARITY_INTERVAL; column++) {
-		double value = getValue("ssd", currentPosition, cv::Point(column, currentPosition.y));
+		double value = getValue(currentPosition, cv::Point(column, currentPosition.y));
 		if(value < bestValue) {
 			bestValue = value;
 			bestMatch = cv::Point(column, currentPosition.y);
@@ -98,9 +100,30 @@ double ssdValue(cv::Point currentPosition, cv::Point position) {
 	return value;
 }
 
-double getValue(std::string method, cv::Point currentPosition, cv::Point position) {
-	if(method == "ssd") {
+double sadValue(cv::Point currentPosition, cv::Point position) {
+	double value = 0;
+	int row, column;
+	int fromX = -WINDOW_SIZE;
+	int fromY = -WINDOW_SIZE;
+	
+	for(row = -WINDOW_SIZE; row <= WINDOW_SIZE; row++) {
+		for(column = -WINDOW_SIZE; column <= WINDOW_SIZE; column++) {
+			int image0Value = image0.at<uchar>(currentPosition.y + row, currentPosition.x + column);
+			int image1Value = image1.at<uchar>(position.y + row, position.x + column);
+			
+			value += std::abs(image0Value - image1Value);
+		}
+	}
+	
+	return value;
+}
+
+double getValue(cv::Point currentPosition, cv::Point position) {
+	if(METHOD == "ssd") {
 		return ssdValue(currentPosition, position);
+	}
+	else if(METHOD == "sad") {
+		return sadValue(currentPosition, position);
 	}
 	return 0;
 }
@@ -170,7 +193,7 @@ int main(int argc, char** argv) {
 	std::cout << "It took " << elapsed_secs << " seconds";
 	std::stringstream ss;
 	
-	ss << "out/disparity_map_" << SET << "_" << WINDOW_SIZE << ".png";
+	ss << "out/disparity_map_" << SET << "_" << METHOD << "_" << WINDOW_SIZE << ".png";
 	cv::imwrite(ss.str(), output);
 
 	cv::namedWindow("Gray image", CV_WINDOW_AUTOSIZE);
