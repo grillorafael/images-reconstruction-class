@@ -4,18 +4,43 @@
 #include <ctime>
 
 #define WINDOW_SIZE 1
-#define DISPARITY_INTERVAL 15
+#define DISPARITY_INTERVAL 59
+#define SET "teddy"
+//TEDDY 59
+//CONES 59
+//VENUS 19
+//TSUKUBA 15
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/stereo/";
 
-cv::Mat image0 = cv::imread(IMAGES_PATH + "tsukuba0.png", CV_LOAD_IMAGE_GRAYSCALE);
-cv::Mat image1 = cv::imread(IMAGES_PATH + "tsukuba1.png", CV_LOAD_IMAGE_GRAYSCALE);
+cv::Mat image0 = cv::imread(IMAGES_PATH + SET + "/imL.png", CV_LOAD_IMAGE_GRAYSCALE);
+cv::Mat image1 = cv::imread(IMAGES_PATH + SET + "/imR.png", CV_LOAD_IMAGE_GRAYSCALE);
 
 cv::Mat addWindowFrames(cv::Mat image);
 cv::Point getBestMatch(cv::Point currentPosition);
 double ssdValue(cv::Point currentPosition, cv::Point position);
 double getValue(std::string method, cv::Point currentPosition, cv::Point position);
 float distanceBetween(cv::Point p1, cv::Point p2);
+
+cv::Mat removeWindowFrames(cv::Mat image) {
+	cv::Size s = image.size();
+	std::cout << "[removeWindowFrames] Image Height " << s.height << "\n";
+	std::cout << "[removeWindowFrames] Image Width " << s.width << "\n";
+	
+	cv::Mat output = cv::Mat::zeros(s.height - 2 * WINDOW_SIZE, s.width - 2 * WINDOW_SIZE, CV_8UC1);
+	
+	int column;
+	int row;
+	
+	for(row = 0; row < s.height - 2 * WINDOW_SIZE; row++) {
+		for(column = 0; column < s.width - 2 * WINDOW_SIZE; column++) {
+			int color = image.at<uchar>(row + WINDOW_SIZE, column + WINDOW_SIZE);
+			output.at<uchar>(row, column) = color;
+		}
+	}
+	
+	return output;
+}
 
 cv::Mat addWindowFrames(cv::Mat image) {
 	cv::Size s = image.size();
@@ -43,8 +68,8 @@ cv::Point getBestMatch(cv::Point currentPosition) {
 	double bestValue = std::numeric_limits<double>::max();
 
 	cv::Size imageSize = image0.size();
-	for(int column = WINDOW_SIZE; column < imageSize.width - WINDOW_SIZE; column++) {
-//	for(int column = currentPosition.x; column <= currentPosition.x + DISPARITY_INTERVAL; column++) {
+//	for(int column = WINDOW_SIZE; column < imageSize.width - WINDOW_SIZE; column++) {
+	for(int column = currentPosition.x; column <= currentPosition.x + DISPARITY_INTERVAL; column++) {
 		double value = getValue("ssd", currentPosition, cv::Point(column, currentPosition.y));
 		if(value < bestValue) {
 			bestValue = value;
@@ -130,22 +155,25 @@ int main(int argc, char** argv) {
 
 	std::cout << "\nImage min value: " << minValue << "\nImage max value: " << maxValue << "\n";
 
-
 	// Normalizing image
-	for (row = WINDOW_SIZE; row < (outputSize.height - WINDOW_SIZE); row++) {
-		for (column = WINDOW_SIZE; column < (outputSize.width - WINDOW_SIZE); column++) {
+	for (row = 0; row < outputSize.height; row++) {
+		for (column = 0; column < outputSize.width; column++) {
 			float value = ((((float)output.at<uchar>(row, column) - (float)minValue)) / (float) maxValue) * 255.0;
 			output.at<uchar>(row, column) = (int)value;
 		}
 	}
 	std::cout << "\n";
 	// End image normalization
+	
+	output = removeWindowFrames(output);
 
 	clock_t end = clock();
 	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
 	std::cout << "It took " << elapsed_secs << " seconds";
-
-	cv::imwrite("out/disparity_map.png", output);
+	std::stringstream ss;
+	
+	ss << "out/disparity_map_" << SET << "_" << WINDOW_SIZE << ".png";
+	cv::imwrite(ss.str(), output);
 
 	cv::namedWindow("Gray image", CV_WINDOW_AUTOSIZE);
 	cv::imshow("Gray image", output);
