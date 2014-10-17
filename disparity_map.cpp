@@ -13,8 +13,8 @@ cv::Mat image1 = cv::imread(IMAGES_PATH + "tsukuba1.png", CV_LOAD_IMAGE_GRAYSCAL
 
 cv::Mat addWindowFrames(cv::Mat image);
 cv::Point getBestMatch(cv::Point currentPosition);
-double ssdValue(cv::Point position);
-double getValue(std::string method, cv::Point position);
+double ssdValue(cv::Point currentPosition, cv::Point position);
+double getValue(std::string method, cv::Point currentPosition, cv::Point position);
 float distanceBetween(cv::Point p1, cv::Point p2);
 
 cv::Mat addWindowFrames(cv::Mat image) {
@@ -44,7 +44,7 @@ cv::Point getBestMatch(cv::Point currentPosition) {
 
 	cv::Size imageSize = image0.size();
 	for(int column = WINDOW_SIZE; column < imageSize.width - WINDOW_SIZE; column++) {
-		double value = getValue("ssd", cv::Point(column, currentPosition.y));
+		double value = getValue("ssd", currentPosition, cv::Point(column, currentPosition.y));
 		if(value < bestValue) {
 			bestValue = value;
 			bestMatch = cv::Point(column, currentPosition.y);
@@ -54,24 +54,27 @@ cv::Point getBestMatch(cv::Point currentPosition) {
 	return bestMatch;
 }
 
-double ssdValue(cv::Point position) {
+double ssdValue(cv::Point currentPosition, cv::Point position) {
 	double value = 0;
 	int row, column;
-	int fromX = position.x - (WINDOW_SIZE / 2);
-	int fromY = position.y - (WINDOW_SIZE / 2);
-
-	for(row = fromY; row < fromY + WINDOW_SIZE; row++) {
-		for(column = fromX; column < position.x + WINDOW_SIZE; column++) {
-			value += pow(image0.at<int>(row, column) - image1.at<int>(row, column), 2.0);
+	int fromX = -WINDOW_SIZE;
+	int fromY = -WINDOW_SIZE;
+	
+	for(row = -WINDOW_SIZE; row <= WINDOW_SIZE; row++) {
+		for(column = -WINDOW_SIZE; column <= WINDOW_SIZE; column++) {
+			int image0Value = image0.at<int>(currentPosition.y + row, currentPosition.x + column);
+			int image1Value = image0.at<int>(position.y + row, position.x + column);
+			
+			value += pow(image0Value - image1Value, 2.0);
 		}
 	}
 
 	return value;
 }
 
-double getValue(std::string method, cv::Point position) {
+double getValue(std::string method, cv::Point currentPosition, cv::Point position) {
 	if(method == "ssd") {
-		return ssdValue(position);
+		return ssdValue(currentPosition, position);
 	}
 	return 0;
 }
