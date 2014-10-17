@@ -51,6 +51,8 @@ cv::Point getBestMatch(cv::Point currentPosition) {
 		}
 	}
 
+//	std::cout << "\nSSD for (" << currentPosition.y << ", " << currentPosition.x << ")" << " is " << bestValue;
+
 	return bestMatch;
 }
 
@@ -59,12 +61,12 @@ double ssdValue(cv::Point currentPosition, cv::Point position) {
 	int row, column;
 	int fromX = -WINDOW_SIZE;
 	int fromY = -WINDOW_SIZE;
-	
+
 	for(row = -WINDOW_SIZE; row <= WINDOW_SIZE; row++) {
 		for(column = -WINDOW_SIZE; column <= WINDOW_SIZE; column++) {
 			int image0Value = image0.at<int>(currentPosition.y + row, currentPosition.x + column);
-			int image1Value = image0.at<int>(position.y + row, position.x + column);
-			
+			int image1Value = image1.at<int>(position.y + row, position.x + column);
+
 			value += pow(image0Value - image1Value, 2.0);
 		}
 	}
@@ -94,10 +96,10 @@ int main(int argc, char** argv) {
 
 	image0 = addWindowFrames(image0);
 	image1 = addWindowFrames(image1);
-	
+
 	cv::Size outputSize = image0.size();
 	cv::Mat output = cv::Mat::zeros(outputSize.height, outputSize.width, CV_8UC1);
-	
+
 	int row;
 	int column;
 	int minValue = 0;
@@ -107,9 +109,9 @@ int main(int argc, char** argv) {
 	for(row = WINDOW_SIZE; row < outputSize.height - WINDOW_SIZE; row++) {
 		std::cout << "\r" << ((row * 100) / outputSize.height) << "% ";
 		std::cout.flush();
-		
+
 		for(column = WINDOW_SIZE; column < outputSize.width - WINDOW_SIZE; column++) {
-			
+
 			cv::Point currentPosition = cv::Point(column, row);
 			cv::Point bestMatch = getBestMatch(currentPosition);
 			float disparity = distanceBetween(currentPosition, bestMatch);
@@ -126,13 +128,12 @@ int main(int argc, char** argv) {
 	}
 
 	std::cout << "\nImage min value: " << minValue << "\nImage max value: " << maxValue << "\n";
-	
-	
+
+
 	// Normalizing image
 	for (row = WINDOW_SIZE; row < (outputSize.height - WINDOW_SIZE); row++) {
 		for (column = WINDOW_SIZE; column < (outputSize.width - WINDOW_SIZE); column++) {
-			float value = (((float)output.at<int>(row, column) - (float)minValue) / (float)maxValue) * 255.0;
-//			std::cout << "\nImage old value: " << output.at<int>(row, column) << " Image new Value: " << value;
+			float value = ((((float)output.at<int>(row, column) - (float)minValue)) / (float) maxValue) * 255.0;
 			output.at<int>(row, column) = (int)value;
 		}
 	}
@@ -142,7 +143,7 @@ int main(int argc, char** argv) {
 	clock_t end = clock();
 	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
 	std::cout << "It took " << elapsed_secs << " seconds";
-	
+
 	cv::imwrite("out/disparity_map.png", output);
 
 	cv::namedWindow("Gray image", CV_WINDOW_AUTOSIZE);
