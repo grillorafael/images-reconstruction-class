@@ -3,7 +3,7 @@
 #include <iostream>
 #include <ctime>
 
-#define WINDOW_SIZE 3
+#define WINDOW_SIZE 1
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/stereo/";
 
@@ -29,8 +29,8 @@ cv::Mat addWindowFrames(cv::Mat image) {
 
 	for(row = 0; row < s.height; row++) {
 		for(column = 0; column < s.width; column++) {
-			int color = image.at<int>(row, column);
-			output.at<int>(row + WINDOW_SIZE, column + WINDOW_SIZE) = color;
+			int color = image.at<uchar>(row, column);
+			output.at<uchar>(row + WINDOW_SIZE, column + WINDOW_SIZE) = color;
 		}
 	}
 
@@ -63,8 +63,8 @@ double ssdValue(cv::Point currentPosition, cv::Point position) {
 
 	for(row = -WINDOW_SIZE; row <= WINDOW_SIZE; row++) {
 		for(column = -WINDOW_SIZE; column <= WINDOW_SIZE; column++) {
-			int image0Value = image0.at<int>(currentPosition.y + row, currentPosition.x + column);
-			int image1Value = image1.at<int>(position.y + row, position.x + column);
+			int image0Value = image0.at<uchar>(currentPosition.y + row, currentPosition.x + column);
+			int image1Value = image1.at<uchar>(position.y + row, position.x + column);
 
 			value += pow(image0Value - image1Value, 2.0);
 		}
@@ -114,8 +114,8 @@ int main(int argc, char** argv) {
 			cv::Point currentPosition = cv::Point(column, row);
 			cv::Point bestMatch = getBestMatch(currentPosition);
 			float disparity = distanceBetween(currentPosition, bestMatch);
-			output.at<int>(row, column) = disparity;
-//			std::cout << "\nDisparity Found: " << disparity << " Image value: " << output.at<int>(row, column);
+			output.at<uchar>(row, column) = disparity;
+//			std::cout << "\nDisparity Found: " << disparity << " Image value: " << output.at<uchar>(row, column);
 
 			if(disparity > maxValue) {
 				maxValue = disparity;
@@ -132,8 +132,8 @@ int main(int argc, char** argv) {
 	// Normalizing image
 	for (row = WINDOW_SIZE; row < (outputSize.height - WINDOW_SIZE); row++) {
 		for (column = WINDOW_SIZE; column < (outputSize.width - WINDOW_SIZE); column++) {
-			float value = ((((float)output.at<int>(row, column) - (float)minValue)) / (float) maxValue) * 255.0;
-			output.at<int>(row, column) = (int)value;
+			float value = ((((float)output.at<uchar>(row, column) - (float)minValue)) / (float) maxValue) * 255.0;
+			output.at<uchar>(row, column) = (int)value;
 		}
 	}
 	std::cout << "\n";
