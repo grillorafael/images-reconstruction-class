@@ -2,7 +2,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <ctime>
-#include <thread>
 
 #define WINDOW_SIZE 3
 
