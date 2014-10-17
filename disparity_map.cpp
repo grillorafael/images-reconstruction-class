@@ -4,6 +4,7 @@
 #include <ctime>
 
 #define WINDOW_SIZE 1
+#define DISPARITY_INTERVAL 15
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/stereo/";
 
@@ -43,6 +44,7 @@ cv::Point getBestMatch(cv::Point currentPosition) {
 
 	cv::Size imageSize = image0.size();
 	for(int column = WINDOW_SIZE; column < imageSize.width - WINDOW_SIZE; column++) {
+//	for(int column = currentPosition.x; column <= currentPosition.x + DISPARITY_INTERVAL; column++) {
 		double value = getValue("ssd", currentPosition, cv::Point(column, currentPosition.y));
 		if(value < bestValue) {
 			bestValue = value;
