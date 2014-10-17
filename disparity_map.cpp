@@ -3,9 +3,9 @@
 #include <iostream>
 #include <ctime>
 
-#define WINDOW_SIZE 1
-#define DISPARITY_INTERVAL 59
-#define SET "teddy"
+#define WINDOW_SIZE 9
+#define DISPARITY_INTERVAL 15
+#define SET "tsukuba"
 //TEDDY 59
 //CONES 59
 //VENUS 19
@@ -13,8 +13,8 @@
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/stereo/";
 
-cv::Mat image0 = cv::imread(IMAGES_PATH + SET + "/imL.png", CV_LOAD_IMAGE_GRAYSCALE);
-cv::Mat image1 = cv::imread(IMAGES_PATH + SET + "/imR.png", CV_LOAD_IMAGE_GRAYSCALE);
+cv::Mat image0 = cv::imread(IMAGES_PATH + SET + "/imR.png", CV_LOAD_IMAGE_GRAYSCALE);
+cv::Mat image1 = cv::imread(IMAGES_PATH + SET + "/imL.png", CV_LOAD_IMAGE_GRAYSCALE);
 
 cv::Mat addWindowFrames(cv::Mat image);
 cv::Point getBestMatch(cv::Point currentPosition);
@@ -76,8 +76,6 @@ cv::Point getBestMatch(cv::Point currentPosition) {
 			bestMatch = cv::Point(column, currentPosition.y);
 		}
 	}
-
-//	std::cout << "\nSSD for (" << currentPosition.y << ", " << currentPosition.x << ")" << " is " << bestValue;
 
 	return bestMatch;
 }
