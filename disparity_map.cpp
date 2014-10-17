@@ -20,8 +20,8 @@ float distanceBetween(cv::Point p1, cv::Point p2);
 cv::Mat addWindowFrames(cv::Mat image) {
 	cv::Size s = image.size();
 
-    std::cout << "[addWindowFrames] Image Height " << s.height << "\n";
-    std::cout << "[addWindowFrames] Image Width " << s.width << "\n";
+	std::cout << "[addWindowFrames] Image Height " << s.height << "\n";
+	std::cout << "[addWindowFrames] Image Width " << s.width << "\n";
 
 	cv::Mat output = cv::Mat::zeros(s.height + 2 * WINDOW_SIZE, s.width + 2 * WINDOW_SIZE, CV_8UC1);
 
@@ -102,8 +102,8 @@ int main(int argc, char** argv) {
 
 	std::cout << "Calculating disparity map...\n";
 	for(row = WINDOW_SIZE; row < outputSize.height - WINDOW_SIZE; row++) {
-        std::cout << "\r" << ((row * 100) / outputSize.height) << "% ";
-        std::cout.flush();
+		std::cout << "\r" << ((row * 100) / outputSize.height) << "% ";
+		std::cout.flush();
 		
 		for(column = WINDOW_SIZE; column < outputSize.width - WINDOW_SIZE; column++) {
 			
