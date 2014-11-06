@@ -1,7 +1,7 @@
 {
     "name": "maria_room",
-    "np": 4,
-    "method": "ndlt",
+    "np": 10,
+    "method": "dlt",
     "output": "out/maria_room.png",
     "images": [
         "images/maria_room/1.jpg",

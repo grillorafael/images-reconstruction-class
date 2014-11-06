@@ -1,5 +1,5 @@
 import numpy as np
-import timeit, uff, uff_vert, maria, sys, json
+import timeit, sys, json
 from cv2 import *
 
 def main(args):
@@ -93,10 +93,13 @@ def dlt(p1, p2, img1, img2):
         u, v = p2[i][0], p2[i][1]
         A.append([x, y, 1, 0, 0, 0, -u*x, -u*y, -u])
         A.append([0, 0, 0, x, y, 1, -v*x, -v*y, -v])
+    print A
     A = np.asarray(A)
     U, S, Vh = np.linalg.svd(A)
     L = Vh[-1,:] / Vh[-1,-1]
     H = L.reshape(3, 3)
+    print "\n\n\n\n\n"
+    print H
 
     return H
 
