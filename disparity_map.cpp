@@ -1,12 +1,13 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 #include <ctime>
-// Best result SAD with Windows 7
-#define WINDOW_SIZE 7
+// Best result SAD with Window = 7
+#define WINDOW_SIZE 5
 #define DISPARITY_INTERVAL 15
 #define SET "tsukuba"
-#define METHOD "sad"
+#define METHOD "ssd"
 //TEDDY 59
 //CONES 59
 //VENUS 19
@@ -14,8 +15,8 @@
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/stereo/";
 
-cv::Mat image0 = cv::imread(IMAGES_PATH + SET + "/imR.png", CV_LOAD_IMAGE_GRAYSCALE);
-cv::Mat image1 = cv::imread(IMAGES_PATH + SET + "/imL.png", CV_LOAD_IMAGE_GRAYSCALE);
+cv::Mat image0 = cv::imread(IMAGES_PATH + SET + "/imR.png", CV_LOAD_IMAGE_COLOR);
+cv::Mat image1 = cv::imread(IMAGES_PATH + SET + "/imL.png", CV_LOAD_IMAGE_COLOR);
 
 cv::Mat addWindowFrames(cv::Mat image);
 cv::Point getBestMatch(cv::Point currentPosition);
@@ -28,19 +29,19 @@ cv::Mat removeWindowFrames(cv::Mat image) {
 	cv::Size s = image.size();
 	std::cout << "[removeWindowFrames] Image Height " << s.height << "\n";
 	std::cout << "[removeWindowFrames] Image Width " << s.width << "\n";
-	
+
 	cv::Mat output = cv::Mat::zeros(s.height - 2 * WINDOW_SIZE, s.width - 2 * WINDOW_SIZE, CV_8UC1);
-	
+
 	int column;
 	int row;
-	
+
 	for(row = 0; row < s.height - 2 * WINDOW_SIZE; row++) {
 		for(column = 0; column < s.width - 2 * WINDOW_SIZE; column++) {
 			int color = image.at<uchar>(row + WINDOW_SIZE, column + WINDOW_SIZE);
 			output.at<uchar>(row, column) = color;
 		}
 	}
-	
+
 	return output;
 }
 
@@ -50,15 +51,15 @@ cv::Mat addWindowFrames(cv::Mat image) {
 	std::cout << "[addWindowFrames] Image Height " << s.height << "\n";
 	std::cout << "[addWindowFrames] Image Width " << s.width << "\n";
 
-	cv::Mat output = cv::Mat::zeros(s.height + 2 * WINDOW_SIZE, s.width + 2 * WINDOW_SIZE, CV_8UC1);
+	cv::Mat output = cv::Mat::zeros(s.height + 2 * WINDOW_SIZE, s.width + 2 * WINDOW_SIZE, CV_8UC3);
 
 	int column;
 	int row;
 
 	for(row = 0; row < s.height; row++) {
 		for(column = 0; column < s.width; column++) {
-			int color = image.at<uchar>(row, column);
-			output.at<uchar>(row + WINDOW_SIZE, column + WINDOW_SIZE) = color;
+			cv::Vec3b color = image.at<cv::Vec3b>(row, column);
+			output.at<cv::Vec3b>(row + WINDOW_SIZE, column + WINDOW_SIZE) = color;
 		}
 	}
 
@@ -87,13 +88,18 @@ double ssdValue(cv::Point currentPosition, cv::Point position) {
 	int row, column;
 	int fromX = -WINDOW_SIZE;
 	int fromY = -WINDOW_SIZE;
+	cv::Point from, to;
 
 	for(row = -WINDOW_SIZE; row <= WINDOW_SIZE; row++) {
 		for(column = -WINDOW_SIZE; column <= WINDOW_SIZE; column++) {
-			int image0Value = image0.at<uchar>(currentPosition.y + row, currentPosition.x + column);
-			int image1Value = image1.at<uchar>(position.y + row, position.x + column);
+			cv::Vec3b image0Value = image0.at<cv::Vec3b>(currentPosition.y + row, currentPosition.x + column);
+			cv::Vec3b image1Value = image1.at<cv::Vec3b>(position.y + row, position.x + column);
 
-			value += pow(image0Value - image1Value, 2.0);
+			from = cv::Point(image0Value[1], image0Value[2]);
+			to = cv::Point(image1Value[1], image1Value[2]);
+
+
+			value += pow(distanceBetween(from, to), 2.0);
 		}
 	}
 
@@ -105,16 +111,20 @@ double sadValue(cv::Point currentPosition, cv::Point position) {
 	int row, column;
 	int fromX = -WINDOW_SIZE;
 	int fromY = -WINDOW_SIZE;
-	
+	cv::Point from, to;
+
 	for(row = -WINDOW_SIZE; row <= WINDOW_SIZE; row++) {
 		for(column = -WINDOW_SIZE; column <= WINDOW_SIZE; column++) {
-			int image0Value = image0.at<uchar>(currentPosition.y + row, currentPosition.x + column);
-			int image1Value = image1.at<uchar>(position.y + row, position.x + column);
-			
-			value += std::abs(image0Value - image1Value);
+			cv::Vec3b image0Value = image0.at<cv::Vec3b>(currentPosition.y + row, currentPosition.x + column);
+			cv::Vec3b image1Value = image1.at<cv::Vec3b>(position.y + row, position.x + column);
+
+			from = cv::Point(image0Value[1], image0Value[2]);
+			to = cv::Point(image1Value[1], image1Value[2]);
+
+			value += std::abs(distanceBetween(from, to));
 		}
 	}
-	
+
 	return value;
 }
 
@@ -140,6 +150,9 @@ float distanceBetween(cv::Point p1, cv::Point p2) {
 
 int main(int argc, char** argv) {
 	clock_t begin = clock();
+
+	cvtColor(image0, image0, CV_BGR2Lab);
+	cvtColor(image1, image1, CV_BGR2Lab);
 
 	image0 = addWindowFrames(image0);
 	image1 = addWindowFrames(image1);
@@ -185,14 +198,17 @@ int main(int argc, char** argv) {
 	}
 	std::cout << "\n";
 	// End image normalization
-	
+
 	output = removeWindowFrames(output);
 
 	clock_t end = clock();
 	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
 	std::cout << "It took " << elapsed_secs << " seconds";
 	std::stringstream ss;
-	
+
+	// Makes no difference
+	//	cv::medianBlur(output, output, 7);
+
 	ss << "out/disparity_map_" << SET << "_" << METHOD << "_" << WINDOW_SIZE << ".png";
 	cv::imwrite(ss.str(), output);
 
