@@ -99,6 +99,12 @@ def dlt(p1, p2, img1, img2):
     L = Vh[-1,:] / Vh[-1,-1]
     H = L.reshape(3, 3)
     print "\n\n\n\n\n"
+    print U
+    print "\n\n\n\n\n"
+    print S
+    print "\n\n\n\n\n"
+    print Vh
+    print "\n\n\n\n\n"
     print H
 
     return H

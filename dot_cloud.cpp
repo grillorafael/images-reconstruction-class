@@ -14,63 +14,75 @@ cv::Mat image0 = cv::imread(IMAGES_PATH + "/temple0102.png", CV_LOAD_IMAGE_COLOR
 cv::Mat image1 = cv::imread(IMAGES_PATH + "/temple0107.png", CV_LOAD_IMAGE_COLOR);
 
 cv::Point image0Points[8] = {
-	cv::Point(202, 250),
-	cv::Point(353, 208),
-	cv::Point(108, 460),
-	cv::Point(326, 177),
-	cv::Point(275, 454),
-	cv::Point(275, 454),
-	cv::Point(275, 454),
-	cv::Point(275, 454)
+	cv::Point(578, 2040),
+	cv::Point(647, 2269),
+	cv::Point(759, 2223),
+	cv::Point(746, 2457),
+	cv::Point(567, 1082),
+	cv::Point(548, 1375),
+	cv::Point(632, 2038),
+	cv::Point(895, 1500)
 };
 
 cv::Point image1Points[8] = {
-	cv::Point(223, 274),
-	cv::Point(335, 194),
-	cv::Point(110, 463),
-	cv::Point(312, 169),
-	cv::Point(279, 442),
-	cv::Point(275, 454),
-	cv::Point(275, 454),
-	cv::Point(275, 454)
+	cv::Point(932, 2545),
+	cv::Point(953, 2619),
+	cv::Point(988, 2604),
+	cv::Point(981, 2671),
+	cv::Point(408, 473),
+	cv::Point(365, 781),
+	cv::Point(473, 1436),
+	cv::Point(734, 926)
 };
 
-void fundamentalMatrix() {
-	Eigen::MatrixXd A(8, 9);
-	int length = ARRAY_SIZE(image0Points), i;
+cv::Mat getFundamentalMatrix(cv::Point* points1, cv::Point* points2) {
+	std::cout << "\n" << "[getFundamentalMatrix] Starting" << "\n";
+	
+	cv::Mat s, u, vt, F;
+	cv::Mat A = cv::Mat::zeros(8, 9, CV_64F);
+ 
+	std::cout << "\n" << "[getFundamentalMatrix] Computing Points" << "\n";
+	for (int i = 0; i < 8; i+=1) {
+		cv::Point p1 = points1[i];
+		cv::Point p2 = points2[i];
+		
+		double li[9] = {p1.x * p2.x, p1.y * p2.x, p2.x, p2.y * p1.x, p2.y * p1.y, p2.y, p1.x, p1.y, 1};
+		
+		cv::Mat(1, 9, CV_64F, &li).copyTo(A.row(i));
+	}
 
-	for (i = 0; i < length; i++) {
-		A(i, 0) = image1Points[i].x * image0Points[i].x; // x' * x
-		A(i, 1) = image1Points[i].x * image0Points[i].y; // x' * y
-		A(i, 2) = image1Points[i].x; //  x'
-		A(i, 3) = image1Points[i].y * image0Points[i].x; // y'* x
-		A(i, 4) = image1Points[i].y * image0Points[i].y; // y' * y
-		A(i, 5) = image1Points[i].y; // y'
-		A(i, 6) = image0Points[i].x; // x
-		A(i, 7) = image1Points[i].y; // y
-		A(i, 8) = 1; // 1
-	}
+	std::cout << "\n" << "[getFundamentalMatrix] A SIZE: " << A.size() << "\n";
 	
-	Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
-	std::cout << svd.matrixV().rightCols(1) << "\n\n";
+	std::cout << "\n" << "[getFundamentalMatrix] Computing SVD" << "\n";
+	cv::SVD::compute(A, u, s, vt, cv::SVD::FULL_UV);
+	std::cout << "\n" << "[getFundamentalMatrix] SVD Computed" << "\n";
 	
-	//	Reshaping the matrix
-	Eigen::MatrixXd F(3, 3);
-	int width = 3;
-	for (i = 0; i < 9; i++) {
-		int row = i / width;
-		int column = i % width;
-		F(row, column) = svd.matrixV().rightCols(1)(i);
-	}
-	F(3, 3) = 0;
+	std::cout << "\n" << vt.row(7) << "\n";
+	std::cout << "\n" << "[getFundamentalMatrix] Reshaping F" << "\n";
 	
+	// First version of F
+	F = vt.row(7).reshape(1, 3);
+	
+	std::cout << "\n" << "[getFundamentalMatrix] Computing Second SVD" << "\n";
+	cv::SVD::compute(F, u, s, vt, cv::SVD::FULL_UV);
+	
+	u.at<double>(2, 2) = 0;
+	
+	std::cout << u << "\n\n";
+	std::cout << s << "\n\n";
+	std::cout << vt << "\n\n";
+	std::cout << "\n" << "[gnetFundamentalMatrix] Computing Second F" << "\n";
+	// Second version of F
+	F = s.mul(vt);
+
 	std::cout << F << "\n";
+	return F;
 }
 
 int main() {
 	clock_t begin = clock();
 	//	TODO: CODE
-	fundamentalMatrix();
+	getFundamentalMatrix(image0Points, image1Points);
 	// CODE
 	clock_t end = clock();
 	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
