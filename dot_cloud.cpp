@@ -35,6 +35,38 @@ cv::Point image1Points[8] = {
 	cv::Point(734, 926)
 };
 
+// 8 points algorithm normalized
+cv::Mat getNormalizedFundamentalMatrix(cv::Point* points1, cv::Point* points2) {
+	std::cout << "\n" << "[getNormalizedFundamentalMatrix] Starting" << "\n";
+	cv::Mat s, u, vt, F, t, T;
+	cv::Mat A = cv::Mat::zeros(8, 9, CV_64F);
+	
+	cv::Size im0size = image0.size();
+	cv::Size im1size = image1.size();
+	
+	double tTmp[3][3] = {
+		{ im0size.width + im0size.height, 0, im0size.width / 2 },
+		{ 0, im0size.width + im0size.height, im0size.height / 2 },
+		{ 0, 0, 1 },
+	};
+	t = cv::Mat(3, 3, CV_64F, &tTmp);
+	
+	double TTmp[3][3] = {
+		{ im1size.width + im1size.height, 0, im1size.width / 2 },
+		{ 0, im1size.width + im1size.height, im1size.height / 2 },
+		{ 0, 0, 1 },
+	};
+	T = cv::Mat(3, 3, CV_64F, &TTmp);
+	
+	for (int i = 0; i < 8; i+=1) {
+		
+	}
+	
+	
+	return A;
+}
+
+// 8 points algorithm
 cv::Mat getFundamentalMatrix(cv::Point* points1, cv::Point* points2) {
 	std::cout << "\n" << "[getFundamentalMatrix] Starting" << "\n";
 	
@@ -83,6 +115,7 @@ int main() {
 	clock_t begin = clock();
 	//	TODO: CODE
 	getFundamentalMatrix(image0Points, image1Points);
+	getNormalizedFundamentalMatrix(image0Points, image1Points);
 	// CODE
 	clock_t end = clock();
 	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
