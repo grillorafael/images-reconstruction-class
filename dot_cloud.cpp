@@ -5,14 +5,13 @@
 #include <ctime>
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <gsl/gsl_poly.h>
 
 #define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/fm/";
 
-// -66.521739 155.454545 temple0102.png
 cv::Mat image0 = cv::imread(IMAGES_PATH + "/temple0102.png", CV_LOAD_IMAGE_COLOR);
-// -58.695652 144.878049 temple0107.png
 cv::Mat image1 = cv::imread(IMAGES_PATH + "/temple0107.png", CV_LOAD_IMAGE_COLOR);
 
 cv::Point image1Points[8] = {
@@ -172,21 +171,101 @@ cv::Mat getPMatrix(double k[3][3], double r[3][3],double t[3]) {
 	return p;
 }
 
+cv::Point get3dPoint(cv::Mat F, cv::Point x, cv::Point X) {
+	std::cout << "\n" << "[get3dPoint] Starting" << "\n";
+	
+	cv::Mat u, s, vt, e, E, r, R;
+	double a, b, c, d, fe, fl;
+	
+	cv::Mat px = cv::Mat(3, 1, CV_64F);
+	px.at<double>(0, 0) = x.x;
+	px.at<double>(1, 0) = x.y;
+	px.at<double>(2, 0) = 1;
+	
+	cv::Mat pX = cv::Mat(3, 1, CV_64F);
+	px.at<double>(0, 0) = X.x;
+	px.at<double>(1, 0) = X.y;
+	px.at<double>(2, 0) = 1;
+	
+	double tTmp[3][3] = {
+		{1, 0, -x.x},
+		{0, 1, -x.y},
+		{0, 0, 1},
+	};
+	cv::Mat t = cv::Mat(3, 3, CV_64F, &tTmp);
+	
+	double TTmp[3][3] = {
+		{1, 0, -X.x},
+		{0, 1, -X.y},
+		{0, 0, 1},
+	};
+	cv::Mat T = cv::Mat(3, 3, CV_64F, &TTmp);
+	
+	px = t * px;
+	px = px / px.at<double>(2);
+	
+	pX = T * pX;
+	pX = pX / pX.at<double>(2);
+	
+	F = T.t().inv() * F * t.inv();
+	cv::SVD::compute(F, u, s, vt, cv::SVD::FULL_UV);
+	
+	e = vt.col(2);
+	E = u.row(2);
+
+	e = e / sqrt((pow(vt.at<double>(1, 3), 2))+(pow(vt.at<double>(2, 3), 2)));
+	E = E / sqrt((pow(u.at<double>(3, 1), 2))+(pow(u.at<double>(3, 2), 2)));
+	
+	double rTmp[3][3] = {
+		{e.at<double>(0, 0), e.at<double>(1, 0), 0},
+		{-e.at<double>(1, 0), e.at<double>(0, 0), 0},
+		{0, 0, 1},
+	};
+	r = cv::Mat(3, 3, CV_64F, &rTmp);
+	
+	double RTmp[3][3] = {
+		{E.at<double>(0, 0), E.at<double>(1, 0), 0},
+		{-E.at<double>(1, 0), E.at<double>(0, 0), 0},
+		{0, 0, 1},
+	};
+	R = cv::Mat(3, 3, CV_64F, &RTmp);
+	
+	F = R.t().inv() * F * r.inv();
+	
+	a = F.at<double>(2, 2);
+	b = F.at<double>(2, 3);
+	c = F.at<double>(3, 2);
+	d = F.at<double>(3, 3);
+	fe = e.at<double>(3, 1);
+	fl = E.at<double>(3, 1);
+	
+	double coefs[7]
+	
+	return X;
+}
+
 int main() {
 	std::cout << "\n" << "[main] Starting" << "\n";
 	clock_t begin = clock();
-	//	TODO: CODE
+	// ------------------------------------------------
 	std::cout << "\n" << "[main] Initializing variables";
 	cv::Mat p0,p1,f;
 	
 	std::cout << "\n" << "[main] Calculating variables" << "\n";
 	f = getFundamentalMatrix(image0Points, image1Points);
-	// getNormalizedFundamentalMatrix(image0Points, image1Points);
+//	f = getNormalizedFundamentalMatrix(image0Points, image1Points);
+
 	p0 = getPMatrix(k0, r0, t0);
 	p1 = getPMatrix(k1, r1, t1);
 	
+	
+	for (int i = 0; i < 8; i++) {
+		std::cout << "\n" << get3dPoint(f, image0Points[i], image1Points[i]) << "\n";
+	}
+	
+	
 	std::cout << "\n" << "[main] Finish" << "\n";
-	// CODE
+	// ------------------------------------------------
 	clock_t end = clock();
 	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
 	std::cout << "It took " << elapsed_secs << " seconds\n";
