@@ -300,6 +300,13 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x) {
 	
 	cv::SVD::compute(A, u, s, vt, cv::SVD::FULL_UV);
 	
+	cv::Mat point3dTmp = vt.row(3);
+	point3dTmp = point3dTmp / point3dTmp.at<double>(3, 0);
+	
+	
+	result.x = point3dTmp.at<double>(0,0);
+	result.y = point3dTmp.at<double>(1,0);
+	result.z = point3dTmp.at<double>(2,0);
 	
 	return result;
 }
