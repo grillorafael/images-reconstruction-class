@@ -16,25 +16,26 @@ cv::Mat image0 = cv::imread(IMAGES_PATH + "/temple0102.png", CV_LOAD_IMAGE_COLOR
 cv::Mat image1 = cv::imread(IMAGES_PATH + "/temple0107.png", CV_LOAD_IMAGE_COLOR);
 
 cv::Point image1Points[8] = {
-	cv::Point(86, 407),
-	cv::Point(170, 74),
-	cv::Point(304, 433),
-	cv::Point(220, 148),
-	cv::Point(87, 349),
-	cv::Point(184, 399),
-	cv::Point(190, 282),
-	cv::Point(124, 188)
+	cv::Point(106, 460),
+	cv::Point(113, 439),
+	cv::Point(298, 394),
+	cv::Point(149, 446),
+	cv::Point(179, 448),
+	cv::Point(274, 453),
+	cv::Point(298, 183),
+	cv::Point(317, 240)
 };
 
 cv::Point image0Points[8] = {
-	cv::Point(60, 355),
-	cv::Point(248, 71),
-	cv::Point(220, 448),
-	cv::Point(267, 154),
-	cv::Point(58, 385),
-	cv::Point(201, 410),
-	cv::Point(164, 169),
-	cv::Point(158, 166)
+	cv::Point(109, 462),
+	cv::Point(110, 440),
+	cv::Point(288, 377),
+	cv::Point(154, 449),
+	cv::Point(192, 452),
+	cv::Point(278, 442),
+	cv::Point(288, 178),
+	
+	cv::Point(303, 228)
 };
 
 double k0[3][3] = {
@@ -231,16 +232,13 @@ cv::Mat get3dPoint(cv::Mat F, cv::Mat x) {
 	cv::Point pt1 = cv::Point(0, 0);
 	cv::Point pt2 = cv::Point(0, 0);
 
-	cv::Mat homog = cv::Mat::zeros(3, 1, CV_64FC1);
-	homog.at<double>(2, 0) = 1;
-	
 	cv::Mat rightUpper = cv::Mat::zeros(3, 1, CV_64FC1);
-	rightUpper.at<double>(0, 0) = image0.size().width;
-	rightUpper = homog.cross(rightUpper);
-	
+	rightUpper.at<double>(1, 0) = 1;
+	rightUpper.at<double>(2, 0) = -image0.size().width;
+
 	cv::Mat leftDown = cv::Mat::zeros(3, 1, CV_64FC1);
-	leftDown.at<double>(1, 0) = image0.size().height;
-	leftDown = homog.cross(leftDown);
+	leftDown.at<double>(0, 0) = 1;
+	leftDown.at<double>(2, 0) = -image0.size().height;
 	
 	cv::Mat line = F * x;
 	
