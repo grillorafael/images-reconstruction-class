@@ -297,12 +297,16 @@ int main() {
 	
 	for (int x = 0; x < image0.size().width; x++) {
 		for (int y = 0; y < image0.size().height; y++) {
-			// TODO: SKIP BLACK PIXELS
 			cv::Mat p = cv::Mat::zeros(3, 1, CV_64FC1);
 			p.at<double>(0, 0) = x;
 			p.at<double>(1, 0) = y;
 			p.at<double>(2, 0) = 1;
-			get3dPoint(f, p);
+			
+			// Skipping black pixels
+			if(image0.at<cv::Vec3b>(y, x)[0] > 0) {
+				get3dPoint(f, p);
+			}
+			
 		}
 	}
 	

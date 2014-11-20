@@ -4,7 +4,7 @@
 #include <iostream>
 #include <ctime>
 // Best result SAD with Window = 7
-#define WINDOW_SIZE 9
+#define WINDOW_SIZE 7
 #define DISPARITY_INTERVAL 15
 #define SET "tsukuba"
 #define METHOD "ncc"
@@ -155,16 +155,28 @@ double nccValue(cv::Point currentPosition, cv::Point position) {
 			cv::Vec3b image0Value = image0.at<cv::Vec3b>(currentPosition.y + row, currentPosition.x + column);
 			cv::Vec3b image1Value = image1.at<cv::Vec3b>(position.y + row, position.x + column);
 			
+			cv::Mat v1 = cv::Mat::zeros(2, 1, CV_64FC1);
+			v1.at<double>(0, 0) = image0Value[1];
+			v1.at<double>(1, 0) = image0Value[2];
+			
+			cv::Mat v2 = cv::Mat::zeros(2, 1, CV_64FC1);
+			v2.at<double>(0, 0) = image1Value[1];
+			v2.at<double>(1, 0) = image1Value[2];
+			
 			from = cv::Point(image0Value[1], image0Value[2]);
 			to = cv::Point(image1Value[1], image1Value[2]);
 			
 			grey0 = image0Value[0];
 			grey1 = image1Value[0];
 			
-			num += grey0 * grey1;
-
-			den1 += grey0 * grey0;
-			den2 += grey1 * grey1;
+//			Grey scale only
+//			num += grey0 * grey1;
+//			den1 += grey0 * grey0;
+//			den2 += grey1 * grey1;
+			
+			num += v1.dot(v2);
+			den1 += v1.dot(v1);
+			den2 += v2.dot(v2);
 		}
 	}
 	
