@@ -101,8 +101,6 @@ double distanceBetween(cv::Point p1, cv::Point p2) {
 double ssdValue(cv::Point currentPosition, cv::Point position) {
 	double value = 0;
 	int row, column;
-	int fromX = -WINDOW_SIZE;
-	int fromY = -WINDOW_SIZE;
 	cv::Point from, to;
 	
 	for(row = -WINDOW_SIZE; row <= WINDOW_SIZE; row++) {
@@ -263,9 +261,8 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x) {
 	for (int i = 0; i < 4; i++) {
 		tmp = lines[i].cross(line);
 		tmp = tmp / tmp.at<double>(2, 0);
-		// TODO: REVIEW CONDITION
-		if((tmp.at<double>(0, 0) >= 0 || tmp.at<double>(1, 0) >= 0)
-		   && (tmp.at<double>(0, 0) <= image0.size().width || tmp.at<double>(1, 0) <= image0.size().height)) {
+		if ((tmp.at<double>(0, 0) >= 0 && tmp.at<double>(0, 0) < image0.size().width) &&
+			(tmp.at<double>(1, 0) >= 0 && tmp.at<double>(1, 0) < image0.size().height)) {
 			if(hasP1) {
 				pt2.x = tmp.at<double>(0, 0);
 				pt2.y = tmp.at<double>(1, 0);
@@ -284,12 +281,17 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x) {
 	cv::Point bestMatch;
 
 	for(int i = 0; i < it.count; i++, ++it) {
-		if(it.pos().x > WINDOW_SIZE && it.pos().y > WINDOW_SIZE) {
-//			double value = ssdValue(ptX, it.pos());
-//			if(value < bestValue) {
-//				bestValue = value;
-//				bestMatch = it.pos();
-//			}
+		if((it.pos().x > WINDOW_SIZE && it.pos().y > WINDOW_SIZE) &&
+		   (it.pos().x < image0.size().width - WINDOW_SIZE && it.pos().y < image0.size().height - WINDOW_SIZE)) {
+//			std::cout << "\n" << image0.size().width << "\n";
+//			std::cout << "\n" << image0.size().height << "\n";
+//			std::cout << "\n" << ptX << "\n";
+//			std::cout << "\n" << it.pos() << "\n";
+			double value = ssdValue(ptX, it.pos());
+			if(value < bestValue) {
+				bestValue = value;
+				bestMatch = it.pos();
+			}
 		}
 	}
 	
