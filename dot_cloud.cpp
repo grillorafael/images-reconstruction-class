@@ -197,7 +197,7 @@ cv::Mat getFundamentalMatrix(cv::Point* points1, cv::Point* points2) {
 cv::Mat getPMatrix(double k[3][3], double r[3][3],double t[3]) {
 	std::cout << "\n" << "[getPMatrix] Starting" << "\n";
 	cv::Mat k0,r0;
-	std::cout << "\n" << "[getPMatrix] Initializing k0 and r0 with zeroes";
+	std::cout << "\n" << "[getPMatrix] Initializing k0 and r0 with zeros";
 	k0 = cv::Mat::zeros(3, 3, CV_64F);
 	r0 = cv::Mat::zeros(3, 3, CV_64F);
 	
@@ -283,10 +283,6 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x) {
 	for(int i = 0; i < it.count; i++, ++it) {
 		if((it.pos().x > WINDOW_SIZE && it.pos().y > WINDOW_SIZE) &&
 		   (it.pos().x < image0.size().width - WINDOW_SIZE && it.pos().y < image0.size().height - WINDOW_SIZE)) {
-//			std::cout << "\n" << image0.size().width << "\n";
-//			std::cout << "\n" << image0.size().height << "\n";
-//			std::cout << "\n" << ptX << "\n";
-//			std::cout << "\n" << it.pos() << "\n";
 			double value = ssdValue(ptX, it.pos());
 			if(value < bestValue) {
 				bestValue = value;
@@ -296,6 +292,9 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x) {
 	}
 	
 //	std::cout << "\n" << ptX << " Is equivalent to " << bestMatch << "\n";
+	
+	cv::Mat A = cv::Mat::zeros(4, 4, CV_64FC1);
+	
 	
 	return result;
 }
@@ -322,7 +321,10 @@ int main() {
 	std::ofstream outputFile;
 	outputFile.open("cloud.obj", std::ofstream::out | std::ofstream::trunc);
 	
+	std::cout << "\n" << "[main] Computing 3d points" << "\n";
 	for (int x = WINDOW_SIZE; x < image0.size().width - WINDOW_SIZE; x++) {
+		std::cout << "\r" << ((x * 100) / image0.size().width) << "% ";
+		std::cout.flush();
 		for (int y = WINDOW_SIZE; y < image0.size().height - WINDOW_SIZE; y++) {
 			cv::Mat p = cv::Mat::zeros(3, 1, CV_64FC1);
 			p.at<double>(0, 0) = x;
@@ -339,6 +341,9 @@ int main() {
 			
 		}
 	}
+	
+	std::cout << "\r" << "100% ";
+	std::cout.flush();
 	
 	outputFile.close();
 	
