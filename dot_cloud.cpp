@@ -227,7 +227,7 @@ cv::Mat getPMatrix(double k[3][3], double r[3][3],double t[3]) {
 	return p;
 }
 
-cv::Point3d get3dPoint(cv::Mat F, cv::Mat x) {
+cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 	cv::Point3d result;
 	
 	cv::Point ptX = cv::Point(x.at<double>(0, 0), x.at<double>(1, 0));
@@ -277,7 +277,7 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x) {
 	
 	cv::LineIterator it(image1, pt1, pt2, 8);
 	
-	double bestValue = std::numeric_limits<double>::max();;
+	double bestValue = std::numeric_limits<double>::max();
 	cv::Point bestMatch;
 
 	for(int i = 0; i < it.count; i++, ++it) {
@@ -294,9 +294,19 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x) {
 	// std::cout << "\n" << ptX << " Is equivalent to " << bestMatch << "\n";
 	
 	cv::Mat A = cv::Mat::zeros(4, 4, CV_64FC1);
-	cv::Mat s, u, vt;
+	cv::Mat s, u, vt, tmpARow1;
 	
-	// TODO: POPULATE A
+	tmpARow1 = (ptX.x * p0.row(2)) - (p0.row(0));
+	tmpARow1.row(0).copyTo(A.row(0));
+
+	tmpARow1 = (ptX.y * p0.row(2)) - (p0.row(1));
+	tmpARow1.row(0).copyTo(A.row(1));
+	
+	tmpARow1 = (bestMatch.x * p1.row(2)) - (p1.row(0));
+	tmpARow1.row(0).copyTo(A.row(2));
+	
+	tmpARow1 = (bestMatch.y * p0.row(2)) - (p0.row(2));
+	tmpARow1.row(0).copyTo(A.row(3));
 	
 	cv::SVD::compute(A, u, s, vt, cv::SVD::FULL_UV);
 	
@@ -347,7 +357,7 @@ int main() {
 			// std::cout << "\nPIXEL COLOR: " << image0.at<cv::Vec3b>(y, x) << "\n";
 			// Verify treshold
 			if(image0.at<cv::Vec3b>(y, x)[0] > 20) {
-				cv::Point3d the3dPoint = get3dPoint(f, p);
+				cv::Point3d the3dPoint = get3dPoint(f, p, p0, p1);
 				outputFile << "v " << the3dPoint.x << " " << the3dPoint.y << " " << the3dPoint.z << " " << 1.0 << "\n";
 			}
 			
