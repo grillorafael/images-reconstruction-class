@@ -291,9 +291,14 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x) {
 		}
 	}
 	
-//	std::cout << "\n" << ptX << " Is equivalent to " << bestMatch << "\n";
+	// std::cout << "\n" << ptX << " Is equivalent to " << bestMatch << "\n";
 	
 	cv::Mat A = cv::Mat::zeros(4, 4, CV_64FC1);
+	cv::Mat s, u, vt;
+	
+	// TODO: POPULATE A
+	
+	cv::SVD::compute(A, u, s, vt, cv::SVD::FULL_UV);
 	
 	
 	return result;
