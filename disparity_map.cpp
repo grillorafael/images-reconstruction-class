@@ -4,10 +4,10 @@
 #include <iostream>
 #include <ctime>
 // Best result SAD with Window = 7
-#define WINDOW_SIZE 5
+#define WINDOW_SIZE 9
 #define DISPARITY_INTERVAL 15
 #define SET "tsukuba"
-#define METHOD "ssd"
+#define METHOD "ncc"
 //TEDDY 59
 //CONES 59
 //VENUS 19
@@ -69,14 +69,26 @@ cv::Mat addWindowFrames(cv::Mat image) {
 cv::Point getBestMatch(cv::Point currentPosition) {
 	cv::Point bestMatch;
 	double bestValue = std::numeric_limits<double>::max();
+	
+	if(METHOD == "ncc") {
+		bestValue = -bestValue;
+	}
 
 	cv::Size imageSize = image0.size();
 //	for(int column = WINDOW_SIZE; column < imageSize.width - WINDOW_SIZE; column++) {
 	for(int column = currentPosition.x; column <= currentPosition.x + DISPARITY_INTERVAL; column++) {
 		double value = getValue(currentPosition, cv::Point(column, currentPosition.y));
-		if(value < bestValue) {
-			bestValue = value;
-			bestMatch = cv::Point(column, currentPosition.y);
+		if(METHOD != "ncc") {
+			if(value < bestValue) {
+				bestValue = value;
+				bestMatch = cv::Point(column, currentPosition.y);
+			}
+		}
+		else {
+			if(value > bestValue) {
+				bestValue = value;
+				bestMatch = cv::Point(column, currentPosition.y);
+			}
 		}
 	}
 
@@ -128,12 +140,46 @@ double sadValue(cv::Point currentPosition, cv::Point position) {
 	return value;
 }
 
+double nccValue(cv::Point currentPosition, cv::Point position) {
+	double num = 0;
+	double den1 = 0;
+	double den2 = 0;
+	double value = 0;
+	int row, column;
+	uchar grey0, grey1;
+	cv::Point from, to;
+	
+	
+	for(row = -WINDOW_SIZE; row <= WINDOW_SIZE; row++) {
+		for(column = -WINDOW_SIZE; column <= WINDOW_SIZE; column++) {
+			cv::Vec3b image0Value = image0.at<cv::Vec3b>(currentPosition.y + row, currentPosition.x + column);
+			cv::Vec3b image1Value = image1.at<cv::Vec3b>(position.y + row, position.x + column);
+			
+			from = cv::Point(image0Value[1], image0Value[2]);
+			to = cv::Point(image1Value[1], image1Value[2]);
+			
+			grey0 = image0Value[0];
+			grey1 = image1Value[0];
+			
+			num += grey0 * grey1;
+
+			den1 += grey0 * grey0;
+			den2 += grey1 * grey1;
+		}
+	}
+	
+	return num / sqrt(den1 * den2);
+}
+
 double getValue(cv::Point currentPosition, cv::Point position) {
 	if(METHOD == "ssd") {
 		return ssdValue(currentPosition, position);
 	}
 	else if(METHOD == "sad") {
 		return sadValue(currentPosition, position);
+	}
+	else if(METHOD == "ncc") {
+		return nccValue(currentPosition, position);
 	}
 	return 0;
 }
