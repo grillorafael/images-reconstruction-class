@@ -6,8 +6,10 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <gsl/gsl_poly.h>
+#include <iostream>
+#include <fstream>
 
-#define WINDOW_SIZE 9
+#define WINDOW_SIZE 7
 #define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/fm/";
@@ -227,50 +229,73 @@ cv::Mat getPMatrix(double k[3][3], double r[3][3],double t[3]) {
 	return p;
 }
 
-cv::Mat get3dPoint(cv::Mat F, cv::Mat x) {
+cv::Point3d get3dPoint(cv::Mat F, cv::Mat x) {
+	cv::Point3d result;
+	
 	cv::Point ptX = cv::Point(x.at<double>(0, 0), x.at<double>(1, 0));
 	cv::Point pt1 = cv::Point(0, 0);
 	cv::Point pt2 = cv::Point(0, 0);
-
-	cv::Mat rightUpper = cv::Mat::zeros(3, 1, CV_64FC1);
-	rightUpper.at<double>(1, 0) = 1;
-	rightUpper.at<double>(2, 0) = -image0.size().width;
-
-	cv::Mat leftDown = cv::Mat::zeros(3, 1, CV_64FC1);
-	leftDown.at<double>(0, 0) = 1;
-	leftDown.at<double>(2, 0) = -image0.size().height;
+	cv::Mat tmp;
+	bool hasP1 = false;
+	cv::Mat lines[4];
+	
+	cv::Mat up = cv::Mat::zeros(3, 1, CV_64FC1);
+	up.at<double>(1, 0) = 1;
+	
+	cv::Mat down = cv::Mat::zeros(3, 1, CV_64FC1);
+	down.at<double>(1, 0) = 1;
+	down.at<double>(2, 0) = -image0.size().height;
+	
+	cv::Mat left = cv::Mat::zeros(3, 1, CV_64FC1);
+	left.at<double>(0, 0) = 1;
+	
+	cv::Mat right = cv::Mat::zeros(3, 1, CV_64FC1);
+	left.at<double>(0, 0) = 1;
+	left.at<double>(2, 0) = -image0.size().width;
+	
+	lines[0] = up;
+	lines[1] = down;
+	lines[2] = left;
+	lines[3] = right;
 	
 	cv::Mat line = F * x;
 	
-	cv::Mat p1 = rightUpper.cross(line);
-	p1 = p1/p1.at<double>(2, 0);
-	pt1.x = p1.at<double>(0, 0);
-	pt1.y = p1.at<double>(1, 0);
-	
-	cv::Mat p2 = rightUpper.cross(line);
-	p2 = p2 / p2.at<double>(2, 0);
-	pt2.x = p2.at<double>(0, 0);
-	pt2.y = p2.at<double>(1, 0);
+	for (int i = 0; i < 4; i++) {
+		tmp = lines[i].cross(line);
+		tmp = tmp / tmp.at<double>(2, 0);
+		// TODO: REVIEW CONDITION
+		if((tmp.at<double>(0, 0) >= 0 || tmp.at<double>(1, 0) >= 0)
+		   && (tmp.at<double>(0, 0) <= image0.size().width || tmp.at<double>(1, 0) <= image0.size().height)) {
+			if(hasP1) {
+				pt2.x = tmp.at<double>(0, 0);
+				pt2.y = tmp.at<double>(1, 0);
+			}
+			else {
+				pt1.x = tmp.at<double>(0, 0);
+				pt1.y = tmp.at<double>(1, 0);
+				hasP1 = true;
+			}
+		}
+	}
 	
 	cv::LineIterator it(image1, pt1, pt2, 8);
 	
 	double bestValue = std::numeric_limits<double>::max();;
 	cv::Point bestMatch;
-	
-	//	KEEPS RETURNING 0
-	std::cout << "\n" << it.count << "\n";
+
 	for(int i = 0; i < it.count; i++, ++it) {
-		if(it.pos().x < WINDOW_SIZE && it.pos().y > WINDOW_SIZE) {
-			double value = ssdValue(ptX, it.pos());
-			if(value < bestValue) {
-				bestValue = value;
-				bestMatch = it.pos();
-			}
+		if(it.pos().x > WINDOW_SIZE && it.pos().y > WINDOW_SIZE) {
+//			double value = ssdValue(ptX, it.pos());
+//			if(value < bestValue) {
+//				bestValue = value;
+//				bestMatch = it.pos();
+//			}
 		}
 	}
 	
-	return line;
+//	std::cout << "\n" << ptX << " Is equivalent to " << bestMatch << "\n";
 	
+	return result;
 }
 
 int main() {
@@ -292,22 +317,28 @@ int main() {
 	p0 = getPMatrix(k0, r0, t0);
 	p1 = getPMatrix(k1, r1, t1);
 	
+	std::ofstream outputFile;
+	outputFile.open("cloud.obj", std::ofstream::out | std::ofstream::trunc);
 	
-	for (int x = 0; x < image0.size().width; x++) {
-		for (int y = 0; y < image0.size().height; y++) {
+	for (int x = WINDOW_SIZE; x < image0.size().width - WINDOW_SIZE; x++) {
+		for (int y = WINDOW_SIZE; y < image0.size().height - WINDOW_SIZE; y++) {
 			cv::Mat p = cv::Mat::zeros(3, 1, CV_64FC1);
 			p.at<double>(0, 0) = x;
 			p.at<double>(1, 0) = y;
 			p.at<double>(2, 0) = 1;
 			
 			// Skipping black pixels
-			if(image0.at<cv::Vec3b>(y, x)[0] > 0) {
-				get3dPoint(f, p);
+			// std::cout << "\nPIXEL COLOR: " << image0.at<cv::Vec3b>(y, x) << "\n";
+			// Verify treshold
+			if(image0.at<cv::Vec3b>(y, x)[0] > 20) {
+				cv::Point3d the3dPoint = get3dPoint(f, p);
+				outputFile << "v " << the3dPoint.x << " " << the3dPoint.y << " " << the3dPoint.z << " " << 1.0 << "\n";
 			}
 			
 		}
 	}
 	
+	outputFile.close();
 	
 	std::cout << "\n" << "[main] Finish" << "\n";
 	// ------------------------------------------------
