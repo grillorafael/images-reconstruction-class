@@ -95,14 +95,12 @@ double ssdValue(cv::Point currentPosition, cv::Point position) {
 			
 			
 			value += pow(distanceBetween(from, to), 2.0);
-//			value += pow(grey1 - grey0, 2.0);
 		}
 	}
 	
 	return value;
 }
 
-// 8 points algorithm
 cv::Mat getFundamentalMatrix(cv::Point* points1, cv::Point* points2) {
 	std::cout << "\n" << "[getFundamentalMatrix] Starting" << "\n";
 	
@@ -138,8 +136,6 @@ cv::Mat getFundamentalMatrix(cv::Point* points1, cv::Point* points2) {
 	
 	std::cout << "\n" << "[getFundamentalMatrix] Reshaping F";
 	
-	// First version of F
-	// Espaço nulo Direito
 	F = vt.row(vt.rows - 1).reshape(1, 3);
 	F = F / F.at<double>(2, 2);
 	
@@ -151,23 +147,13 @@ cv::Mat getFundamentalMatrix(cv::Point* points1, cv::Point* points2) {
 	
 	std::cout << "\n" << "[getFundamentalMatrix] Computing Second F" << "\n";
 	
-	// Second version of F
 	F = u * tmp * vt;
 	F = F / F.at<double>(2, 2);
-	
-	
-// WITH RANSAC
-//	double fTmp[3][3] = {
-//		{0.000009, -0.000021,  0.007341},
-//		{0.000023,  0.000003, -0.008845},
-//		{-0.012417,  0.005940,  1.000000}
-//	};
-//	cv::Mat(3, 3, CV_64F, &fTmp).copyTo(F);
-// WITH RANSAC
 	
 	return F;
 }
 
+// FIX
 cv::Mat getPMatrix(double k[3][3], double r[3][3],double t[3]) {
 	std::cout << "\n" << "[getPMatrix] Starting" << "\n";
 	cv::Mat k0,r0;
@@ -211,7 +197,6 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 	
 	cv::Mat line = F * x;
 	
-//	CHANGE
 	double cA = line.at<double>(0, 0), cB = line.at<double>(1, 0), cC = line.at<double>(2, 0);
 //	std::cout << "\n" << "Coeficients " << cA << "x + " << cB << "y + " << cC << "\n";
 	double y0 = -cC / cB;
@@ -220,7 +205,6 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 	
 	pt2.x = image0.size().width - 1;
 	pt2.y = yF;
-//	CHANGE
 	
 //	std::cout << "\n" << "Epipolar points " << pt1 << pt2 << "\n";
 	
@@ -240,7 +224,7 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 	}
 	
 //	std::cout << "\n" << ptX << " Is equivalent to " << bestMatch << "\n";
-//	
+//
 //	cv::line(image1, pt1, pt2, CV_RGB(255, 0, 0));
 //	cv::namedWindow("Gray image", CV_WINDOW_AUTOSIZE);
 //	cv::imshow("Gray image", image1);
@@ -297,24 +281,24 @@ int main() {
 	
 	std::cout << "\n" << "[main] Computing 3d points" << "\n";
 	
-	cv::Mat testPoint = cv::Mat::zeros(3, 1, CV_64F);
-	testPoint.at<double>(2, 0) = 1;
-	
-	testPoint.at<double>(0, 0) = 298;
-	testPoint.at<double>(1, 0) = 394;
-	cv::Point3d the3dPoint = get3dPoint(f, testPoint, p0, p1);
-	
-	testPoint.at<double>(0, 0) = 106;
-	testPoint.at<double>(1, 0) = 460;
-	the3dPoint = get3dPoint(f, testPoint, p0, p1);
-	
-	testPoint.at<double>(0, 0) = 317;
-	testPoint.at<double>(1, 0) = 240;
-	the3dPoint = get3dPoint(f, testPoint, p0, p1);
-
-	testPoint.at<double>(0, 0) = 179;
-	testPoint.at<double>(1, 0) = 448;
-	the3dPoint = get3dPoint(f, testPoint, p0, p1);
+//	cv::Mat testPoint = cv::Mat::zeros(3, 1, CV_64F);
+//	testPoint.at<double>(2, 0) = 1;
+//	
+//	testPoint.at<double>(0, 0) = 298;
+//	testPoint.at<double>(1, 0) = 394;
+//	cv::Point3d the3dPoint = get3dPoint(f, testPoint, p0, p1);
+//	
+//	testPoint.at<double>(0, 0) = 106;
+//	testPoint.at<double>(1, 0) = 460;
+//	the3dPoint = get3dPoint(f, testPoint, p0, p1);
+//	
+//	testPoint.at<double>(0, 0) = 317;
+//	testPoint.at<double>(1, 0) = 240;
+//	the3dPoint = get3dPoint(f, testPoint, p0, p1);
+//
+//	testPoint.at<double>(0, 0) = 179;
+//	testPoint.at<double>(1, 0) = 448;
+//	the3dPoint = get3dPoint(f, testPoint, p0, p1);
 	
 	for (int x = WINDOW_SIZE; x < image0.size().width - WINDOW_SIZE; x++) {
 		std::cout << "\r" << ((x * 100) / image0.size().width) << "% ";
@@ -332,7 +316,7 @@ int main() {
 				
 				// Removing NaN and Infinite values
 				if(the3dPoint.x == the3dPoint.x && the3dPoint.y == the3dPoint.y && the3dPoint.z == the3dPoint.z && !std::isinf(the3dPoint.x)) {
-					outputFile << "v " << the3dPoint.x << " " << the3dPoint.y << " " << the3dPoint.z << " " << 1.0 << "\n";
+					outputFile << "v " << std::fixed << the3dPoint.x << " " << the3dPoint.y << " " << the3dPoint.z << " " << 1.0 << "\n";
 				}
 			}
 			
