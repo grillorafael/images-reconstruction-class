@@ -275,7 +275,7 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 	
 	cv::SVD::compute(A, u, s, vt, cv::SVD::FULL_UV);
 	
-	cv::Mat point3dTmp = vt.row(3);
+	cv::Mat point3dTmp = vt.row(vt.rows - 1);
 	point3dTmp = point3dTmp / point3dTmp.at<double>(3, 0);
 	
 	result.x = point3dTmp.at<double>(0,0);
