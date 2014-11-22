@@ -11,7 +11,7 @@
 #include <cmath>
 
 #define numberOfPoints 8
-#define WINDOW_SIZE 11
+#define WINDOW_SIZE 7
 #define ENABLE_DEBUG 0
 #define F_MODE "r" // or "r"
 
@@ -68,6 +68,12 @@ double r1[3][3] = {
 
 double t0[3] = {-0.05157154578564796000, 0.00120001566069944090, 0.60066423290325455000};
 double t1[3] = {-0.04592612096202596000, -0.00032656373638871063, 0.60909066773860632000};
+
+double rt0[3][4] = {
+	{0.33395826580541360000, 0.83010730713039638000, -0.44653525655760135000, -0.05157154578564796000},
+	{0.78707906244147485000, 0.01507325297158268500, 0.61666793861129443000, 0.00120001566069944090},
+	{0.51863130079709752000, -0.55739990643484760000, -0.64832624359957369000, 0.60066423290325455000}
+};
 
 double rt1[3][4] = {
 	{0.19834669516517861000, 0.89752906429360457000, -0.39382758570889664000, -0.04592612096202596000},
@@ -269,7 +275,7 @@ int main() {
 	clock_t begin = clock();
 	// ------------------------------------------------
 	std::cout << "\n" << "[main] Initializing variables";
-	cv::Mat p0, p1, f, fn, F, kP0, kP1, rtP1;
+	cv::Mat p0, p1, f, fn, F, kP0, kP1, rtP1, rtP0;
 	
 	cvtColor(image0, image0, CV_BGR2Lab);
 	cvtColor(image1, image1, CV_BGR2Lab);
@@ -283,14 +289,17 @@ int main() {
 
 	F = F_MODE == "n" ? fn : f;
 
-	double p0Tmp[3][4] = {
-		{1, 0, 0, 0},
-		{0, 1, 0, 0},
-		{0, 0, 1, 0}
-	};
-	cv::Mat(3, 4, CV_64F, &p0Tmp).copyTo(p0);
+//	double p0Tmp[3][4] = {
+//		{1, 0, 0, 0},
+//		{0, 1, 0, 0},
+//		{0, 0, 1, 0}
+//	};
+//	cv::Mat(3, 4, CV_64F, &p0Tmp).copyTo(p0);
+//	cv::Mat(3, 3, CV_64F, &k0).copyTo(kP0);
+//	p0 = kP0 * p0;
 	cv::Mat(3, 3, CV_64F, &k0).copyTo(kP0);
-	p0 = kP0 * p0;
+	cv::Mat(3, 4, CV_64F, &rt0).copyTo(rtP0);
+	p0 = kP0 * rtP0;
 	
 	std::cout << "\n" << "[main] P " << "\n" << p0 << "\n";
 	
@@ -337,13 +346,14 @@ int main() {
 			p.at<double>(2, 0) = 1;
 			
 			// Skipping black pixels
-			// Verify treshold
-			if(image0.at<cv::Vec3b>(y, x)[0] > 20) {
+			cv::Vec3b color = image0.at<cv::Vec3b>(y, x);
+			if((int)color[0] > 0) {
 				cv::Point3d the3dPoint = get3dPoint(F, p, p0, p1);
+				double greyScale = ((int)color[0]) / 255.00;
 				
 				// Removing NaN and Infinite values
 				if(the3dPoint.x == the3dPoint.x && the3dPoint.y == the3dPoint.y && the3dPoint.z == the3dPoint.z && !std::isinf(the3dPoint.x)) {
-					outputFile << "v " << std::fixed << the3dPoint.x << " " << the3dPoint.y << " " << the3dPoint.z << "\n";
+					outputFile << "v " << std::fixed << the3dPoint.x << " " << the3dPoint.y << " " << the3dPoint.z << " " << greyScale << " " << greyScale << " " << greyScale << "\n";
 				}
 			}
 			
