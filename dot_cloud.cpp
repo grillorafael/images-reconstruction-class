@@ -69,6 +69,12 @@ double r1[3][3] = {
 double t0[3] = {-0.05157154578564796000, 0.00120001566069944090, 0.60066423290325455000};
 double t1[3] = {-0.04592612096202596000, -0.00032656373638871063, 0.60909066773860632000};
 
+double rt1[3][4] = {
+	{0.19834669516517861000, 0.89752906429360457000, -0.39382758570889664000, -0.04592612096202596000},
+	{0.88684804433022724000, 0.00674039737427117440, 0.46201202723618323000, -0.00032656373638871063},
+	{0.41732377692231076000, -0.44090378291809157000, -0.79463495985503529000, 0.60909066773860632000}
+};
+
 double distanceBetween(cv::Point p1, cv::Point p2) {
 	int x1 = p1.x;
 	int x2 = p2.x;
@@ -181,40 +187,6 @@ cv::Mat getFundamentalMatrixNormalized(cv::Point* points1, cv::Point* points2) {
 	return F;
 }
 
-// FIX
-cv::Mat getPMatrix(double k[3][3], double r[3][3],double t[3]) {
-	std::cout << "\n" << "[getPMatrix] Starting" << "\n";
-	cv::Mat k0,r0;
-	
-	std::cout << "\n" << "[getPMatrix] Initializing k0 and r0 with zeros";
-	k0 = cv::Mat::zeros(3, 3, CV_64F);
-	r0 = cv::Mat::zeros(3, 3, CV_64F);
-	
-	std::cout << "\n" << "[getPMatrix] Filling k0 and r0";
-	for(int i = 0; i < 3; i++) {
-		cv::Mat(1, 3, CV_64FC1, &k[i]).copyTo(k0.row(i));
-		cv::Mat(1, 3, CV_64FC1, &r[i]).copyTo(r0.row(i));
-	}
-
-	std::cout << "\n" << "[getPMatrix] Initializing t0";
-	cv::Mat t0 = cv::Mat::zeros(3, 4, CV_64FC1);
-	cv::Mat p;
-
-	std::cout << "\n" << "[getPMatrix] Filling t0";
-	t0.at<double>(0,0) = 1;
-	t0.at<double>(1,1) = 1;
-	t0.at<double>(2,2) = 1;
-	
-	t0.at<double>(0,3) = t[0];
-	t0.at<double>(1,3) = t[1];
-	t0.at<double>(2,3) = t[2];
-	
-	std::cout << "\n" << "[getPMatrix] Calculating P" << "\n";
-	p=k0 * r0 * t0;
-
-	return p;
-}
-
 cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 	cv::Point3d result;
 	
@@ -273,10 +245,17 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 	tmpARow1 = (bestMatch.y * p0.row(2)) - (p0.row(2));
 	tmpARow1.row(0).copyTo(A.row(3));
 	
+//	std::cout << "\n" << "3D A" << A << "\n";
+	
 	cv::SVD::compute(A, u, s, vt, cv::SVD::FULL_UV);
 	
-	cv::Mat point3dTmp = vt.row(vt.rows - 1);
+	cv::Mat point3dTmp = vt.col(vt.cols - 1);
+	
+//	std::cout << "\n" << "3D: " << point3dTmp << "\n";
+	
 	point3dTmp = point3dTmp / point3dTmp.at<double>(3, 0);
+	
+//	std::cout << "\n" << "3D: " << point3dTmp << "\n";
 	
 	result.x = point3dTmp.at<double>(0,0);
 	result.y = point3dTmp.at<double>(1,0);
@@ -290,7 +269,7 @@ int main() {
 	clock_t begin = clock();
 	// ------------------------------------------------
 	std::cout << "\n" << "[main] Initializing variables";
-	cv::Mat p0, p1, f, fn, F, kP0;
+	cv::Mat p0, p1, f, fn, F, kP0, kP1, rtP1;
 	
 	cvtColor(image0, image0, CV_BGR2Lab);
 	cvtColor(image1, image1, CV_BGR2Lab);
@@ -315,7 +294,10 @@ int main() {
 	
 	std::cout << "\n" << "[main] P " << "\n" << p0 << "\n";
 	
-	p1 = getPMatrix(k1, r1, t1);
+	// Can't use R and T. Need to find
+	cv::Mat(3, 3, CV_64F, &k1).copyTo(kP1);
+	cv::Mat(3, 4, CV_64F, &rt1).copyTo(rtP1);
+	p1 = kP1 * rtP1;
 	
 	std::cout << "\n" << "[main] P' " << "\n" << p1 << "\n";
 	
