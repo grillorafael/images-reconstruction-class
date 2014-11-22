@@ -290,7 +290,7 @@ int main() {
 	clock_t begin = clock();
 	// ------------------------------------------------
 	std::cout << "\n" << "[main] Initializing variables";
-	cv::Mat p0,p1, f, fn, F;
+	cv::Mat p0, p1, f, fn, F, kP0;
 	
 	cvtColor(image0, image0, CV_BGR2Lab);
 	cvtColor(image1, image1, CV_BGR2Lab);
@@ -310,8 +310,14 @@ int main() {
 		{0, 0, 1, 0}
 	};
 	cv::Mat(3, 4, CV_64F, &p0Tmp).copyTo(p0);
+	cv::Mat(3, 3, CV_64F, &k0).copyTo(kP0);
+	p0 = kP0 * p0;
+	
+	std::cout << "\n" << "[main] P " << "\n" << p0 << "\n";
 	
 	p1 = getPMatrix(k1, r1, t1);
+	
+	std::cout << "\n" << "[main] P' " << "\n" << p1 << "\n";
 	
 	std::ofstream outputFile;
 	outputFile.open("cloud.obj", std::ofstream::out | std::ofstream::trunc);
