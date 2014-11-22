@@ -8,16 +8,17 @@
 #include <gsl/gsl_poly.h>
 #include <iostream>
 #include <fstream>
+#include <cmath>
 
+#define numberOfPoints 8
 #define WINDOW_SIZE 7
-#define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/fm/";
 
 cv::Mat image0 = cv::imread(IMAGES_PATH + "/temple0102.png", CV_LOAD_IMAGE_COLOR);
 cv::Mat image1 = cv::imread(IMAGES_PATH + "/temple0107.png", CV_LOAD_IMAGE_COLOR);
 
-cv::Point image1Points[8] = {
+cv::Point image0Points[numberOfPoints] = {
 	cv::Point(106, 460),
 	cv::Point(113, 439),
 	cv::Point(298, 394),
@@ -28,7 +29,7 @@ cv::Point image1Points[8] = {
 	cv::Point(317, 240)
 };
 
-cv::Point image0Points[8] = {
+cv::Point image1Points[numberOfPoints] = {
 	cv::Point(109, 462),
 	cv::Point(110, 440),
 	cv::Point(288, 377),
@@ -36,7 +37,6 @@ cv::Point image0Points[8] = {
 	cv::Point(192, 452),
 	cv::Point(278, 442),
 	cv::Point(288, 178),
-	
 	cv::Point(303, 228)
 };
 
@@ -67,27 +67,6 @@ double r1[3][3] = {
 double t0[3] = {-0.05157154578564796000, 0.00120001566069944090, 0.60066423290325455000};
 double t1[3] = {-0.04592612096202596000, -0.00032656373638871063, 0.60909066773860632000};
 
-cv::Mat addWindowFrames(cv::Mat image) {
-	cv::Size s = image.size();
-	
-	std::cout << "[addWindowFrames] Image Height " << s.height << "\n";
-	std::cout << "[addWindowFrames] Image Width " << s.width << "\n";
-	
-	cv::Mat output = cv::Mat::zeros(s.height + 2 * WINDOW_SIZE, s.width + 2 * WINDOW_SIZE, CV_8UC3);
-	
-	int column;
-	int row;
-	
-	for(row = 0; row < s.height; row++) {
-		for(column = 0; column < s.width; column++) {
-			cv::Vec3b color = image.at<cv::Vec3b>(row, column);
-			output.at<cv::Vec3b>(row + WINDOW_SIZE, column + WINDOW_SIZE) = color;
-		}
-	}
-	
-	return output;
-}
-
 double distanceBetween(cv::Point p1, cv::Point p2) {
 	int x1 = p1.x;
 	int x2 = p2.x;
@@ -111,59 +90,42 @@ double ssdValue(cv::Point currentPosition, cv::Point position) {
 			from = cv::Point(image0Value[1], image0Value[2]);
 			to = cv::Point(image1Value[1], image1Value[2]);
 			
+			double grey0 = image0Value[0];
+			double grey1 = image1Value[0];
+			
 			
 			value += pow(distanceBetween(from, to), 2.0);
+//			value += pow(grey1 - grey0, 2.0);
 		}
 	}
 	
 	return value;
 }
 
-// 8 points algorithm normalized
-//cv::Mat getNormalizedFundamentalMatrix(cv::Point* points1, cv::Point* points2) {
-//	std::cout << "\n" << "[getNormalizedFundamentalMatrix] Starting" << "\n";
-//	cv::Mat s, u, vt, F, t, T, P;
-//	cv::Mat A = cv::Mat::zeros(8, 9, CV_64F);
-//	
-//	cv::Size im0size = image0.size();
-//	cv::Size im1size = image1.size();
-//	
-//	double tTmp[3][3] = {
-//		{ im0size.width + im0size.height, 0, im0size.width / 2 },
-//		{ 0, im0size.width + im0size.height, im0size.height / 2 },
-//		{ 0, 0, 1 },
-//	};
-//	t = cv::Mat(3, 3, CV_64F, &tTmp);
-//	
-//	double TTmp[3][3] = {
-//		{ im1size.width + im1size.height, 0, im1size.width / 2 },
-//		{ 0, im1size.width + im1size.height, im1size.height / 2 },
-//		{ 0, 0, 1 },
-//	};
-//	T = cv::Mat(3, 3, CV_64F, &TTmp);
-//	
-//	for (int i = 0; i < 8; i+=1) {
-//		
-//	}
-//	
-//	
-//	return A;
-//}
-
 // 8 points algorithm
 cv::Mat getFundamentalMatrix(cv::Point* points1, cv::Point* points2) {
 	std::cout << "\n" << "[getFundamentalMatrix] Starting" << "\n";
 	
 	cv::Mat s, u, vt, F;
-	cv::Mat A = cv::Mat::zeros(8, 9, CV_64F);
+	cv::Mat A = cv::Mat::zeros(numberOfPoints, 9, CV_64F);
 	cv::Mat tmp = cv::Mat::zeros(3, 3, CV_64F);
  
-	std::cout << "\n" << "[getFundamentalMatrix] Computing Points";
-	for (int i = 0; i < 8; i+=1) {
+	std::cout << "\n" << "[getFundamentalMatrix] Computing Points " << numberOfPoints;
+	for (int i = 0; i < numberOfPoints; i += 1) {
 		cv::Point p1 = points1[i];
 		cv::Point p2 = points2[i];
 		 
-		double li[9] = {p1.x * p2.x, p1.y * p2.x, p2.x, p2.y * p1.x, p2.y * p1.y, p2.y, p1.x, p1.y, 1};
+		double li[9] = {
+			p1.x * p2.x,
+			p1.y * p2.x,
+			p2.x,
+			p2.y * p1.x,
+			p2.y * p1.y,
+			p2.y,
+			p1.x,
+			p1.y,
+			1
+		};
 		
 		cv::Mat(1, 9, CV_64F, &li).copyTo(A.row(i));
 	}
@@ -171,32 +133,45 @@ cv::Mat getFundamentalMatrix(cv::Point* points1, cv::Point* points2) {
 	std::cout << "\n" << "[getFundamentalMatrix] A SIZE: " << A.size();
 	
 	std::cout << "\n" << "[getFundamentalMatrix] Computing SVD";
-	cv::SVD::compute(A, u, s, vt, cv::SVD::FULL_UV);
+	cv::SVD::compute(A, s, u, vt, cv::SVD::FULL_UV);
 	std::cout << "\n" << "[getFundamentalMatrix] SVD Computed";
 	
 	std::cout << "\n" << "[getFundamentalMatrix] Reshaping F";
 	
 	// First version of F
-	F = vt.row(7).reshape(1, 3);
+	// Espaço nulo Direito
+	F = vt.row(vt.rows - 1).reshape(1, 3);
+	F = F / F.at<double>(2, 2);
 	
 	std::cout << "\n" << "[getFundamentalMatrix] Computing Second SVD";
-	cv::SVD::compute(F, u, s, vt, cv::SVD::FULL_UV);
+	cv::SVD::compute(F, s, u, vt, cv::SVD::FULL_UV);
 	
-	tmp.at<double>(0, 0) = u.at<double>(0, 0);
-	tmp.at<double>(1, 1) = u.at<double>(1, 0);
+	tmp.at<double>(0, 0) = s.at<double>(0, 0);
+	tmp.at<double>(1, 1) = s.at<double>(1, 0);
 	
-	std::cout << "\n" << "[gnetFundamentalMatrix] Computing Second F" << "\n";
+	std::cout << "\n" << "[getFundamentalMatrix] Computing Second F" << "\n";
 	
 	// Second version of F
-	F = s * tmp * vt;
-
-//	std::cout << "\n" << F;
+	F = u * tmp * vt;
+	F = F / F.at<double>(2, 2);
+	
+	
+// WITH RANSAC
+//	double fTmp[3][3] = {
+//		{0.000009, -0.000021,  0.007341},
+//		{0.000023,  0.000003, -0.008845},
+//		{-0.012417,  0.005940,  1.000000}
+//	};
+//	cv::Mat(3, 3, CV_64F, &fTmp).copyTo(F);
+// WITH RANSAC
+	
 	return F;
 }
 
 cv::Mat getPMatrix(double k[3][3], double r[3][3],double t[3]) {
 	std::cout << "\n" << "[getPMatrix] Starting" << "\n";
 	cv::Mat k0,r0;
+	
 	std::cout << "\n" << "[getPMatrix] Initializing k0 and r0 with zeros";
 	k0 = cv::Mat::zeros(3, 3, CV_64F);
 	r0 = cv::Mat::zeros(3, 3, CV_64F);
@@ -207,7 +182,6 @@ cv::Mat getPMatrix(double k[3][3], double r[3][3],double t[3]) {
 		cv::Mat(1, 3, CV_64FC1, &r[i]).copyTo(r0.row(i));
 	}
 
-	
 	std::cout << "\n" << "[getPMatrix] Initializing t0";
 	cv::Mat t0 = cv::Mat::zeros(3, 4, CV_64FC1);
 	cv::Mat p;
@@ -222,7 +196,7 @@ cv::Mat getPMatrix(double k[3][3], double r[3][3],double t[3]) {
 	t0.at<double>(2,3) = t[2];
 	
 	std::cout << "\n" << "[getPMatrix] Calculating P" << "\n";
-	p=k0*r0*t0;
+	p=k0 * r0 * t0;
 
 	return p;
 }
@@ -234,49 +208,23 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 	cv::Point pt1 = cv::Point(0, 0);
 	cv::Point pt2 = cv::Point(0, 0);
 	cv::Mat tmp;
-	bool hasP1 = false;
-	cv::Mat lines[4];
-	
-	cv::Mat up = cv::Mat::zeros(3, 1, CV_64FC1);
-	up.at<double>(1, 0) = 1;
-	
-	cv::Mat down = cv::Mat::zeros(3, 1, CV_64FC1);
-	down.at<double>(1, 0) = 1;
-	down.at<double>(2, 0) = -image0.size().height;
-	
-	cv::Mat left = cv::Mat::zeros(3, 1, CV_64FC1);
-	left.at<double>(0, 0) = 1;
-	
-	cv::Mat right = cv::Mat::zeros(3, 1, CV_64FC1);
-	left.at<double>(0, 0) = 1;
-	left.at<double>(2, 0) = -image0.size().width;
-	
-	lines[0] = up;
-	lines[1] = down;
-	lines[2] = left;
-	lines[3] = right;
 	
 	cv::Mat line = F * x;
 	
-	for (int i = 0; i < 4; i++) {
-		tmp = lines[i].cross(line);
-		tmp = tmp / tmp.at<double>(2, 0);
-		if ((tmp.at<double>(0, 0) >= 0 && tmp.at<double>(0, 0) < image0.size().width) &&
-			(tmp.at<double>(1, 0) >= 0 && tmp.at<double>(1, 0) < image0.size().height)) {
-			if(hasP1) {
-				pt2.x = tmp.at<double>(0, 0);
-				pt2.y = tmp.at<double>(1, 0);
-			}
-			else {
-				pt1.x = tmp.at<double>(0, 0);
-				pt1.y = tmp.at<double>(1, 0);
-				hasP1 = true;
-			}
-		}
-	}
+//	CHANGE
+	double cA = line.at<double>(0, 0), cB = line.at<double>(1, 0), cC = line.at<double>(2, 0);
+//	std::cout << "\n" << "Coeficients " << cA << "x + " << cB << "y + " << cC << "\n";
+	double y0 = -cC / cB;
+	double yF = (-cC - cA * (image0.size().width - 1)) / cB;
+	pt1.y = y0;
+	
+	pt2.x = image0.size().width - 1;
+	pt2.y = yF;
+//	CHANGE
+	
+//	std::cout << "\n" << "Epipolar points " << pt1 << pt2 << "\n";
 	
 	cv::LineIterator it(image1, pt1, pt2, 8);
-	
 	double bestValue = std::numeric_limits<double>::max();
 	cv::Point bestMatch;
 
@@ -291,7 +239,12 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 		}
 	}
 	
-	// std::cout << "\n" << ptX << " Is equivalent to " << bestMatch << "\n";
+//	std::cout << "\n" << ptX << " Is equivalent to " << bestMatch << "\n";
+//	
+//	cv::line(image1, pt1, pt2, CV_RGB(255, 0, 0));
+//	cv::namedWindow("Gray image", CV_WINDOW_AUTOSIZE);
+//	cv::imshow("Gray image", image1);
+//	cv::waitKey(0);
 	
 	cv::Mat A = cv::Mat::zeros(4, 4, CV_64FC1);
 	cv::Mat s, u, vt, tmpARow1;
@@ -313,7 +266,6 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 	cv::Mat point3dTmp = vt.row(3);
 	point3dTmp = point3dTmp / point3dTmp.at<double>(3, 0);
 	
-	
 	result.x = point3dTmp.at<double>(0,0);
 	result.y = point3dTmp.at<double>(1,0);
 	result.z = point3dTmp.at<double>(2,0);
@@ -331,12 +283,12 @@ int main() {
 	cvtColor(image0, image0, CV_BGR2Lab);
 	cvtColor(image1, image1, CV_BGR2Lab);
 	
-	image0 = addWindowFrames(image0);
-	image1 = addWindowFrames(image1);
-	
 	std::cout << "\n" << "[main] Calculating variables" << "\n";
+	
 	f = getFundamentalMatrix(image0Points, image1Points);
-
+	std::cout << "\n" << "[main] F " << "\n" << f << "\n";
+	
+	
 	p0 = getPMatrix(k0, r0, t0);
 	p1 = getPMatrix(k1, r1, t1);
 	
@@ -344,21 +296,44 @@ int main() {
 	outputFile.open("cloud.obj", std::ofstream::out | std::ofstream::trunc);
 	
 	std::cout << "\n" << "[main] Computing 3d points" << "\n";
+	
+	cv::Mat testPoint = cv::Mat::zeros(3, 1, CV_64F);
+	testPoint.at<double>(2, 0) = 1;
+	
+	testPoint.at<double>(0, 0) = 298;
+	testPoint.at<double>(1, 0) = 394;
+	cv::Point3d the3dPoint = get3dPoint(f, testPoint, p0, p1);
+	
+	testPoint.at<double>(0, 0) = 106;
+	testPoint.at<double>(1, 0) = 460;
+	the3dPoint = get3dPoint(f, testPoint, p0, p1);
+	
+	testPoint.at<double>(0, 0) = 317;
+	testPoint.at<double>(1, 0) = 240;
+	the3dPoint = get3dPoint(f, testPoint, p0, p1);
+
+	testPoint.at<double>(0, 0) = 179;
+	testPoint.at<double>(1, 0) = 448;
+	the3dPoint = get3dPoint(f, testPoint, p0, p1);
+	
 	for (int x = WINDOW_SIZE; x < image0.size().width - WINDOW_SIZE; x++) {
 		std::cout << "\r" << ((x * 100) / image0.size().width) << "% ";
 		std::cout.flush();
 		for (int y = WINDOW_SIZE; y < image0.size().height - WINDOW_SIZE; y++) {
-			cv::Mat p = cv::Mat::zeros(3, 1, CV_64FC1);
+			cv::Mat p = cv::Mat::zeros(3, 1, CV_64F);
 			p.at<double>(0, 0) = x;
 			p.at<double>(1, 0) = y;
 			p.at<double>(2, 0) = 1;
 			
 			// Skipping black pixels
-			// std::cout << "\nPIXEL COLOR: " << image0.at<cv::Vec3b>(y, x) << "\n";
 			// Verify treshold
 			if(image0.at<cv::Vec3b>(y, x)[0] > 20) {
 				cv::Point3d the3dPoint = get3dPoint(f, p, p0, p1);
-				outputFile << "v " << the3dPoint.x << " " << the3dPoint.y << " " << the3dPoint.z << " " << 1.0 << "\n";
+				
+				// Removing NaN and Infinite values
+				if(the3dPoint.x == the3dPoint.x && the3dPoint.y == the3dPoint.y && the3dPoint.z == the3dPoint.z && !std::isinf(the3dPoint.x)) {
+					outputFile << "v " << the3dPoint.x << " " << the3dPoint.y << " " << the3dPoint.z << " " << 1.0 << "\n";
+				}
 			}
 			
 		}
