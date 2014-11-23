@@ -14,34 +14,37 @@
 #define WINDOW_SIZE 7
 #define ENABLE_DEBUG 0
 #define F_MODE "r" // "n" or "r"
+#define L_TRESHOLD 5
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/fm/";
 
+cv::Mat image0RGB = cv::imread(IMAGES_PATH + "/temple0102.png", CV_LOAD_IMAGE_COLOR);
+cv::Mat image1RGB = cv::imread(IMAGES_PATH + "/temple0110.png", CV_LOAD_IMAGE_COLOR);
+
 cv::Mat image0 = cv::imread(IMAGES_PATH + "/temple0102.png", CV_LOAD_IMAGE_COLOR);
-cv::Mat image1 = cv::imread(IMAGES_PATH + "/temple0107.png", CV_LOAD_IMAGE_COLOR);
+cv::Mat image1 = cv::imread(IMAGES_PATH + "/temple0110.png", CV_LOAD_IMAGE_COLOR);
 
 cv::Point image0Points[numberOfPoints] = {
-	cv::Point(106, 460),
-	cv::Point(113, 439),
-	cv::Point(298, 394),
-	cv::Point(149, 446),
-	cv::Point(179, 448),
-	cv::Point(274, 453),
-	cv::Point(298, 183),
-	cv::Point(317, 240)
+	cv::Point(107, 461),
+	cv::Point(141, 148),
+	cv::Point(197, 468),
+	cv::Point(193, 243),
+	cv::Point(127, 457),
+	cv::Point(167, 363),
+	cv::Point(162, 120),
+	cv::Point(299, 446)
 };
 
 cv::Point image1Points[numberOfPoints] = {
-	cv::Point(109, 462),
-	cv::Point(110, 440),
-	cv::Point(288, 377),
-	cv::Point(154, 449),
-	cv::Point(192, 452),
-	cv::Point(278, 442),
-	cv::Point(288, 178),
-	cv::Point(303, 228)
+	cv::Point(128, 495),
+	cv::Point(162, 183),
+	cv::Point(264, 470),
+	cv::Point(265, 264),
+	cv::Point(155, 483),
+	cv::Point(181, 381),
+	cv::Point(217, 152),
+	cv::Point(291, 415)
 };
-
 
 double k0[3][3] = {
 	{1520.4, 0, 302.32},
@@ -62,13 +65,13 @@ double r0[3][3] = {
 
 };
 double r1[3][3] = {
-	{0.33395826580541360000, 0.83010730713039638000, -0.44653525655760135000},
-	{0.78707906244147485000, 0.01507325297158268500, 0.61666793861129443000},
-	{0.51863130079709752000, -0.55739990643484760000, -0.64832624359957369000}
+	{0.48431095960713322000, 0.83534948970494449000, -0.26006561567055902000},
+	{0.43169237343254652000, 0.03038031678189489700, 0.90150914087013334000},
+	{0.76097607657835897000, -0.54887909998643680000, -0.34590048348258595000}
 };
 
 double t0[3] = {-0.05157154578564796000, 0.00120001566069944090, 0.60066423290325455000};
-double t1[3] = {-0.04592612096202596000, -0.00032656373638871063, 0.60909066773860632000};
+double t1[3] = {-0.04497259796363829700, -0.00470967854812120830, 0.61062211974380132000};
 
 double rt0[3][4] = {
 	{0.19834669516517861000, 0.89752906429360457000, -0.39382758570889664000, -0.05157154578564796000},
@@ -77,9 +80,9 @@ double rt0[3][4] = {
 };
 
 double rt1[3][4] = {
-	{0.33395826580541360000, 0.83010730713039638000, -0.44653525655760135000, -0.04592612096202596000},
-	{0.78707906244147485000, 0.01507325297158268500, 0.61666793861129443000, -0.00032656373638871063},
-	{0.51863130079709752000, -0.55739990643484760000, -0.64832624359957369000, 0.60909066773860632000}
+	{0.48431095960713322000, 0.83534948970494449000, -0.26006561567055902000, -0.04497259796363829700},
+	{0.43169237343254652000, 0.03038031678189489700, 0.90150914087013334000, -0.00470967854812120830},
+	{0.76097607657835897000, -0.54887909998643680000, -0.34590048348258595000, 0.61062211974380132000}
 };
 
 double distanceBetween(cv::Point p1, cv::Point p2) {
@@ -188,7 +191,33 @@ cv::Mat getFundamentalMatrixNormalized(cv::Point* points1, cv::Point* points2) {
 	
 	t = scale * translation;
 	
-	F = getFundamentalMatrix(points1, points2);
+	cv::Point points1T[numberOfPoints];
+	cv::Point points2T[numberOfPoints];
+	cv::Mat tmp = cv::Mat::zeros(3, 1, CV_64F);
+	
+	for (int i = 0; i < numberOfPoints; i++) {
+		tmp.at<double>(2, 0) = 1;
+		
+		tmp.at<double>(0, 0) = points1[i].x;
+		tmp.at<double>(1, 0) = points1[i].y;
+		
+		tmp = t * tmp;
+		tmp = tmp / tmp.at<double>(2, 0);
+		
+		points1T[i] = cv::Point(tmp.at<double>(0, 0), tmp.at<double>(1, 0));
+		
+		tmp.at<double>(2, 0) = 1;
+		
+		tmp.at<double>(0, 0) = points2[i].x;
+		tmp.at<double>(1, 0) = points2[i].y;
+		
+		tmp = t * tmp;
+		tmp = tmp / tmp.at<double>(2, 0);
+		
+		points2T[i] = cv::Point(tmp.at<double>(0, 0), tmp.at<double>(1, 0));
+	}
+	
+	F = getFundamentalMatrix(points1T, points2T);
 	F = t.t() * F * t;
 	F = F / F.at<double>(2, 2);
 	return F;
@@ -335,20 +364,20 @@ int main() {
 		cv::Mat testPoint = cv::Mat::zeros(3, 1, CV_64F);
 		testPoint.at<double>(2, 0) = 1;
 	
-		testPoint.at<double>(0, 0) = 298;
-		testPoint.at<double>(1, 0) = 394;
+		testPoint.at<double>(0, 0) = 107;
+		testPoint.at<double>(1, 0) = 461;
 		cv::Point3d the3dPoint = get3dPoint(f, testPoint, p0, p1);
 	
-		testPoint.at<double>(0, 0) = 106;
-		testPoint.at<double>(1, 0) = 460;
+		testPoint.at<double>(0, 0) = 141;
+		testPoint.at<double>(1, 0) = 148;
 		the3dPoint = get3dPoint(f, testPoint, p0, p1);
 	
-		testPoint.at<double>(0, 0) = 317;
-		testPoint.at<double>(1, 0) = 240;
+		testPoint.at<double>(0, 0) = 197;
+		testPoint.at<double>(1, 0) = 468;
 		the3dPoint = get3dPoint(f, testPoint, p0, p1);
 
-		testPoint.at<double>(0, 0) = 179;
-		testPoint.at<double>(1, 0) = 448;
+		testPoint.at<double>(0, 0) = 193;
+		testPoint.at<double>(1, 0) = 243;
 		the3dPoint = get3dPoint(f, testPoint, p0, p1);
 	}
 	
@@ -362,14 +391,22 @@ int main() {
 			p.at<double>(2, 0) = 1;
 			
 			// Skipping black pixels
-			cv::Vec3b color = image0.at<cv::Vec3b>(y, x);
-			if((int)color[0] > 20) {
+			cv::Vec3b color0 = image0.at<cv::Vec3b>(y, x);
+			cv::Vec3b color1 = image1.at<cv::Vec3b>(y, x);
+			
+			cv::Vec3b colorRGB = image0RGB.at<cv::Vec3b>(y, x);
+			
+			if((int)color0[0] > L_TRESHOLD && (int)color1[1] > L_TRESHOLD) {
 				cv::Point3d the3dPoint = get3dPoint(F, p, p0, p1);
-				double greyScale = ((int)color[0]) / 255.00;
+				
+				double greyScale = ((int)color0[0]) / 255.00;
+				double b = ((int)colorRGB[0]) / 255.00;
+				double g = ((int)colorRGB[1]) / 255.00;
+				double r = ((int)colorRGB[2]) / 255.00;
 				
 				// Removing NaN and Infinite values
 				if(the3dPoint.x == the3dPoint.x && the3dPoint.y == the3dPoint.y && the3dPoint.z == the3dPoint.z && !std::isinf(the3dPoint.x)) {
-					outputFile << "v " << std::fixed << the3dPoint.x << " " << the3dPoint.y << " " << the3dPoint.z << " " << greyScale << " " << greyScale << " " << greyScale << "\n";
+					outputFile << "v " << std::fixed << the3dPoint.x << " " << the3dPoint.y << " " << the3dPoint.z << " " << r << " " << g << " " << b << "\n";
 				}
 			}
 			
