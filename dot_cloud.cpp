@@ -13,7 +13,7 @@
 #define numberOfPoints 8
 #define WINDOW_SIZE 7
 #define ENABLE_DEBUG 0
-#define F_MODE "r" // "n" or "r"
+#define F_MODE "n" // "n" or "r"
 #define L_TRESHOLD 5
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/fm/";
@@ -173,28 +173,22 @@ cv::Mat getFundamentalMatrix(cv::Point* points1, cv::Point* points2) {
 
 cv::Mat getFundamentalMatrixNormalized(cv::Point* points1, cv::Point* points2) {
 	std::cout << "\n" << "[getFundamentalMatrixNormalized] Start" << "\n";
-	cv::Mat translation, scale, t, F;
+	cv::Mat translation, t, F;
 	double translationTmp[3][3] = {
-		{1, 0, -image0.size().width / 2.0},
-		{0, 1, -image0.size().height / 2.0},
+		{1.0, 0, -image0.size().width / 2.0},
+		{0, 1.0, -image0.size().height / 2.0},
 		{0, 0, 1.0}
-	};
-	
-	double scaleTmp[3][3] = {
-		{1, 0, 0},
-		{0, 1, 0},
-		{0, 0, (image0.size().width + image0.size().height)}
 	};
 
 	cv::Mat(3, 3, CV_64F, &translationTmp).copyTo(translation);
-	cv::Mat(3, 3, CV_64F, &scaleTmp).copyTo(scale);
-	
-	t = scale * translation;
+
+	t = translation;
 	
 	cv::Point points1T[numberOfPoints];
 	cv::Point points2T[numberOfPoints];
-	cv::Mat tmp = cv::Mat::zeros(3, 1, CV_64F);
 	
+	cv::Mat tmp = cv::Mat::zeros(3, 1, CV_64F);
+
 	for (int i = 0; i < numberOfPoints; i++) {
 		tmp.at<double>(2, 0) = 1;
 		
