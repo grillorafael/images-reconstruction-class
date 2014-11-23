@@ -348,7 +348,7 @@ int main() {
 			
 			// Skipping black pixels
 			cv::Vec3b color = image0.at<cv::Vec3b>(y, x);
-			if((int)color[0] > 0) {
+			if((int)color[0] > 20) {
 				cv::Point3d the3dPoint = get3dPoint(F, p, p0, p1);
 				double greyScale = ((int)color[0]) / 255.00;
 				
