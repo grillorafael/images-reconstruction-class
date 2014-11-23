@@ -252,23 +252,44 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 	tmpARow1 = (bestMatch.y * p0.row(2)) - (p0.row(2));
 	tmpARow1.row(0).copyTo(A.row(3));
 	
-//	std::cout << "\n" << "3D A" << A << "\n";
-	
 	cv::SVD::compute(A, u, s, vt, cv::SVD::FULL_UV);
 	
 	cv::Mat point3dTmp = vt.col(vt.cols - 1);
 	
-//	std::cout << "\n" << "3D: " << point3dTmp << "\n";
-	
 	point3dTmp = point3dTmp / point3dTmp.at<double>(3, 0);
-	
-//	std::cout << "\n" << "3D: " << point3dTmp << "\n";
 	
 	result.x = point3dTmp.at<double>(0,0);
 	result.y = point3dTmp.at<double>(1,0);
 	result.z = point3dTmp.at<double>(2,0);
 	
 	return result;
+}
+
+double avgDist(cv::Mat F, cv::Point* points1, cv::Point* points2) {
+	double num = 0;
+	double distance, a, b, c;
+	
+	cv::Mat x = cv::Mat::zeros(3, 1, CV_64F);
+	x.at<double>(2, 0) = 1;
+	
+	for (int i = 0; i < numberOfPoints; i++) {
+		cv::Point p = points1[i];
+		cv::Point p_ = points2[i];
+		
+		x.at<double>(0, 0) = p.x;
+		x.at<double>(1, 0) = p.y;
+		
+		cv::Mat line = F * x;
+		
+		a = line.at<double>(0, 0);
+		b = line.at<double>(1, 0);
+		c = line.at<double>(2, 0);
+		
+		distance = fabs(a * p_.x + b * p_.y + c) / sqrt((a * a) + (b * b));
+		num += (distance * distance);
+	}
+	
+	return sqrt(num / numberOfPoints);
 }
 
 int main() {
@@ -290,29 +311,23 @@ int main() {
 
 	F = F_MODE == "n" ? fn : f;
 
-//	double p0Tmp[3][4] = {
-//		{1, 0, 0, 0},
-//		{0, 1, 0, 0},
-//		{0, 0, 1, 0}
-//	};
-//	cv::Mat(3, 4, CV_64F, &p0Tmp).copyTo(p0);
-//	cv::Mat(3, 3, CV_64F, &k0).copyTo(kP0);
-//	p0 = kP0 * p0;
+	// Can't use R and T. Need to find
 	cv::Mat(3, 3, CV_64F, &k0).copyTo(kP0);
 	cv::Mat(3, 4, CV_64F, &rt0).copyTo(rtP0);
 	p0 = kP0 * rtP0;
-	
 	std::cout << "\n" << "[main] P " << "\n" << p0 << "\n";
 	
-	// Can't use R and T. Need to find
 	cv::Mat(3, 3, CV_64F, &k1).copyTo(kP1);
 	cv::Mat(3, 4, CV_64F, &rt1).copyTo(rtP1);
 	p1 = kP1 * rtP1;
-	
 	std::cout << "\n" << "[main] P' " << "\n" << p1 << "\n";
+	// Can't use R and T. Need to find
 	
 	std::ofstream outputFile;
 	outputFile.open("cloud.obj", std::ofstream::out | std::ofstream::trunc);
+	
+	double average = avgDist(F, image0Points, image1Points);
+	std::cout << "\n" << "[main] Quadratic Average " << average << "\n";
 	
 	std::cout << "\n" << "[main] Computing 3d points" << "\n";
 	
