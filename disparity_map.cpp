@@ -4,17 +4,17 @@
 #include <iostream>
 #include <ctime>
 // Best result SAD with Window = 7
-#define WINDOW_SIZE 3
-#define DISPARITY_INTERVAL 15
+#define WINDOW_SIZE 11
+#define DISPARITY_INTERVAL 59
 // Interval
 //TEDDY 59
 //CONES 59
 //VENUS 19
 //TSUKUBA 15
 
-#define SET "tsukuba"
-#define METHOD "ssd"
-#define SCALE 16
+#define SET "teddy"
+#define METHOD "ncc"
+#define SCALE 4
 // Scale
 //TEDDY 4
 //CONES 4
