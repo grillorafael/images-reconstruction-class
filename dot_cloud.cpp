@@ -14,7 +14,7 @@
 #define WINDOW_SIZE 7
 #define ENABLE_DEBUG 0
 #define F_MODE "n" // "n" or "r"
-#define L_TRESHOLD 5
+#define L_TRESHOLD 20
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/fm/";
 
@@ -272,7 +272,7 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 	tmpARow1 = (bestMatch.x * p1.row(2)) - (p1.row(0));
 	tmpARow1.row(0).copyTo(A.row(2));
 	
-	tmpARow1 = (bestMatch.y * p0.row(2)) - (p0.row(2));
+	tmpARow1 = (bestMatch.y * p1.row(2)) - (p1.row(1));
 	tmpARow1.row(0).copyTo(A.row(3));
 	
 	cv::SVD::compute(A, u, s, vt, cv::SVD::FULL_UV);
