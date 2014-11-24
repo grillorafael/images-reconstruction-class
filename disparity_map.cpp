@@ -4,14 +4,22 @@
 #include <iostream>
 #include <ctime>
 // Best result SAD with Window = 7
-#define WINDOW_SIZE 9
-#define DISPARITY_INTERVAL 59
-#define SET "cones"
-#define METHOD "ncc"
+#define WINDOW_SIZE 3
+#define DISPARITY_INTERVAL 15
+// Interval
 //TEDDY 59
 //CONES 59
 //VENUS 19
 //TSUKUBA 15
+
+#define SET "tsukuba"
+#define METHOD "ssd"
+#define SCALE 16
+// Scale
+//TEDDY 4
+//CONES 4
+//VENUS 8
+//TSUKUBA 16
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/stereo/";
 
@@ -233,7 +241,7 @@ int main(int argc, char** argv) {
 			cv::Point currentPosition = cv::Point(column, row);
 			cv::Point bestMatch = getBestMatch(currentPosition);
 			float disparity = distanceBetween(currentPosition, bestMatch);
-			output.at<uchar>(row, column) = disparity;
+			output.at<uchar>(row, column) = disparity * SCALE;
 //			std::cout << "\nDisparity Found: " << disparity << " Image value: " << output.at<uchar>(row, column);
 
 			if(disparity > maxValue) {
@@ -248,12 +256,12 @@ int main(int argc, char** argv) {
 	std::cout << "\nImage min value: " << minValue << "\nImage max value: " << maxValue << "\n";
 
 	// Normalizing image
-	for (row = 0; row < outputSize.height; row++) {
-		for (column = 0; column < outputSize.width; column++) {
-			float value = ((((float)output.at<uchar>(row, column) - (float)minValue)) / (float) maxValue) * 255.0;
-			output.at<uchar>(row, column) = (int)value;
-		}
-	}
+//	for (row = 0; row < outputSize.height; row++) {
+//		for (column = 0; column < outputSize.width; column++) {
+//			float value = ((((float)output.at<uchar>(row, column) - (float)minValue)) / (float) maxValue) * 255.0;
+//			output.at<uchar>(row, column) = (int)value;
+//		}
+//	}
 	std::cout << "\n";
 	// End image normalization
 
