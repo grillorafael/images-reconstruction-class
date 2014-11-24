@@ -10,7 +10,7 @@
 #include <fstream>
 #include <cmath>
 
-#define numberOfPoints 8
+#define numberOfPoints 9
 #define WINDOW_SIZE 7
 #define ENABLE_DEBUG 0
 #define F_MODE "n" // "n" or "r"
@@ -24,7 +24,7 @@ cv::Mat image1RGB = cv::imread(IMAGES_PATH + "/temple0110.png", CV_LOAD_IMAGE_CO
 cv::Mat image0 = cv::imread(IMAGES_PATH + "/temple0102.png", CV_LOAD_IMAGE_COLOR);
 cv::Mat image1 = cv::imread(IMAGES_PATH + "/temple0110.png", CV_LOAD_IMAGE_COLOR);
 
-cv::Point image0Points[numberOfPoints] = {
+cv::Point image0Points[9] = {
 	cv::Point(107, 461),
 	cv::Point(141, 148),
 	cv::Point(197, 468),
@@ -32,10 +32,11 @@ cv::Point image0Points[numberOfPoints] = {
 	cv::Point(127, 457),
 	cv::Point(167, 363),
 	cv::Point(162, 120),
-	cv::Point(299, 446)
+	cv::Point(299, 446),
+	cv::Point(239, 379)
 };
 
-cv::Point image1Points[numberOfPoints] = {
+cv::Point image1Points[9] = {
 	cv::Point(128, 495),
 	cv::Point(162, 183),
 	cv::Point(264, 470),
@@ -43,7 +44,8 @@ cv::Point image1Points[numberOfPoints] = {
 	cv::Point(155, 483),
 	cv::Point(181, 381),
 	cv::Point(217, 152),
-	cv::Point(291, 415)
+	cv::Point(291, 415),
+	cv::Point(220, 371)
 };
 
 double k0[3][3] = {
@@ -346,8 +348,11 @@ int main() {
 	std::cout << "\n" << "[main] P' " << "\n" << p1 << "\n";
 	// Can't use R and T. Need to find
 	
+	std::stringstream ss;
+	ss << "cloud/dot_cloud_w" << WINDOW_SIZE << "_m" << F_MODE << "_n" << numberOfPoints << "_l" << L_TRESHOLD << ".obj";
+	
 	std::ofstream outputFile;
-	outputFile.open("cloud.obj", std::ofstream::out | std::ofstream::trunc);
+	outputFile.open(ss.str(), std::ofstream::out | std::ofstream::trunc);
 	
 	double average = avgDist(F, image0Points, image1Points);
 	std::cout << "\n" << "[main] Quadratic Average " << average << "\n";
