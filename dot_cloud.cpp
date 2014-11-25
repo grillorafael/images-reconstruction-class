@@ -10,10 +10,10 @@
 #include <fstream>
 #include <cmath>
 
-#define numberOfPoints 9
+#define numberOfPoints 8
 #define WINDOW_SIZE 7
 #define ENABLE_DEBUG 0
-#define F_MODE "n" // "n" or "r"
+#define F_MODE "r" // "n" or "r"
 #define L_TRESHOLD 20
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/fm/";
@@ -219,7 +219,7 @@ cv::Mat getFundamentalMatrixNormalized(cv::Point* points1, cv::Point* points2) {
 	return F;
 }
 
-cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
+cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1, cv::Point ref = cv::Point(0, 0)) {
 	cv::Point3d result;
 	
 	cv::Point ptX = cv::Point(x.at<double>(0, 0), x.at<double>(1, 0));
@@ -256,6 +256,8 @@ cv::Point3d get3dPoint(cv::Mat F, cv::Mat x, cv::Mat p0, cv::Mat p1) {
 		std::cout << "\n" << "Coeficients " << cA << "x + " << cB << "y + " << cC << "\n";
 		std::cout << "\n" << "Epipolar points " << pt1 << pt2 << "\n";
 		std::cout << "\n" << ptX << " Is equivalent to " << bestMatch << "\n";
+		std::cout << "\nP1P" << p1 << "\n";
+		cv::circle(image1, ref, 2, CV_RGB(0, 255, 0));
 		cv::line(image1, pt1, pt2, CV_RGB(255, 0, 0));
 		cv::namedWindow("Gray image", CV_WINDOW_AUTOSIZE);
 		cv::imshow("Gray image", image1);
@@ -365,19 +367,19 @@ int main() {
 	
 		testPoint.at<double>(0, 0) = 107;
 		testPoint.at<double>(1, 0) = 461;
-		cv::Point3d the3dPoint = get3dPoint(f, testPoint, p0, p1);
+		cv::Point3d the3dPoint = get3dPoint(f, testPoint, p0, p1, cv::Point(128, 495));
 	
 		testPoint.at<double>(0, 0) = 141;
 		testPoint.at<double>(1, 0) = 148;
-		the3dPoint = get3dPoint(f, testPoint, p0, p1);
+		the3dPoint = get3dPoint(f, testPoint, p0, p1, cv::Point(162, 183));
 	
 		testPoint.at<double>(0, 0) = 197;
 		testPoint.at<double>(1, 0) = 468;
-		the3dPoint = get3dPoint(f, testPoint, p0, p1);
+		the3dPoint = get3dPoint(f, testPoint, p0, p1, cv::Point(264, 470));
 
 		testPoint.at<double>(0, 0) = 193;
 		testPoint.at<double>(1, 0) = 243;
-		the3dPoint = get3dPoint(f, testPoint, p0, p1);
+		the3dPoint = get3dPoint(f, testPoint, p0, p1, cv::Point(265, 264));
 	}
 	
 	for (int x = WINDOW_SIZE; x < image0.size().width - WINDOW_SIZE; x++) {
