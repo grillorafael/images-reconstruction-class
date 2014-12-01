@@ -6,11 +6,6 @@
 #include "opencv2/nonfree/nonfree.hpp"
 #include <iostream>
 #include <ctime>
-#include <Eigen/Core>
-#include <Eigen/Dense>
-
-#define PI 3.14159265
-#define ARRAY_SIZE(array) (sizeof((array))/sizeof((array[0])))
 
 std::string IMAGES_PATH =  "/Users/rafael/Projects/python-mosaic/final_project/";
 
@@ -79,6 +74,7 @@ cv::Mat getHomography(cv::Point* points1, cv::Point* points2) {
 
 void changeHomographyCoords(cv::Mat H, cv::Mat thetaMatrix) {
 	double c;
+	cv::Mat tmp;
 	c = sqrt(pow(H.at<double>(2, 0), 2) + pow(H.at<double>(2, 1), 2));
 	
 	double tmpMatrix[2][2] = {
@@ -86,7 +82,7 @@ void changeHomographyCoords(cv::Mat H, cv::Mat thetaMatrix) {
 		{H.at<double>(1, 0), H.at<double>(1, 1)}
 	};
 	
-	cv::Mat tmp = cv::Mat(2, 2, CV_64F, &tmpMatrix);
+	cv::Mat(2, 2, CV_64F, &tmpMatrix).copyTo(tmp);
 	tmp = tmp * thetaMatrix;
 	
 	H.at<double>(0, 0) = tmp.at<double>(0, 0);
@@ -115,14 +111,14 @@ cv::Mat applyS(cv::Mat H, double u1, cv::Mat thetaMatrix, cv::Mat p, bool invers
 		{-H.at<double>(0, 1), H.at<double>(1, 1)}
 	};
 	
-	leftyMatrix = cv::Mat(2, 2, CV_64F, &leftyMatrixTmp);
+	cv::Mat(2, 2, CV_64F, &leftyMatrixTmp).copyTo(leftyMatrix);
 	
 	cv::Mat rightMatrix;
 	double rightMatrixTmp[2][1] = {
-		{(H.at<double>(0, 0) - H.at<double>(1, 1)) * u1 + H.at<double>(0, 2)},
-		{(H.at<double>(1, 0) + H.at<double>(0, 1)) * u1 + H.at<double>(1, 2)}
+		{ (H.at<double>(0, 0) - H.at<double>(1, 1)) * u1 + H.at<double>(0, 2) },
+		{ (H.at<double>(1, 0) + H.at<double>(0, 1)) * u1 + H.at<double>(1, 2) }
 	};
-	rightMatrix = cv::Mat(2, 1, CV_64F, &rightMatrixTmp);
+	cv::Mat(2, 1, CV_64F, &rightMatrixTmp).copyTo(rightMatrix);
 	
 	double multiplier = 1 / (1 + H.at<double>(2, 0) * u1);
 	
@@ -130,7 +126,7 @@ cv::Mat applyS(cv::Mat H, double u1, cv::Mat thetaMatrix, cv::Mat p, bool invers
 		leftyMatrix = leftyMatrix.inv();
 		rightMatrix = rightMatrix * -1;
 		
-		multiplier = 1 / multiplier;
+		multiplier = (1 / multiplier);
 	}
 	
 	
@@ -257,7 +253,7 @@ int main() {
 	clock_t begin = clock();
 	// CODE
 	
-	int u = 1100;
+	int u = 1125;
 	cv::Mat thetaMatrix, output;
 	cv::Mat H = getHomography(image0Points, image1Points);
 	
@@ -267,8 +263,10 @@ int main() {
 		{sin(theta), cos(theta)}
 	};
 
-	thetaMatrix = cv::Mat(2, 2, CV_64F, &thetaMatrixTmp);
+	cv::Mat(2, 2, CV_64F, &thetaMatrixTmp).copyTo(thetaMatrix);
+	std::cout << "H\n" << H << "\n";
 	changeHomographyCoords(H, thetaMatrix);
+	std::cout << "H'\n" << H << "\n";
 	output = halfProjectiveWarp(H, image1, u, thetaMatrix, true);
 	
 	// CODE
