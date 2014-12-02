@@ -123,6 +123,7 @@ cv::Mat applyS(cv::Mat H, double u1, cv::Mat thetaMatrix, cv::Mat p, bool invers
 	double multiplier = 1 / (1 + H.at<double>(2, 0) * u1);
 	
 	if(inverse) {
+		leftyMatrix.at<double>(1,1) *= 0.7673;
 		leftyMatrix = leftyMatrix.inv();
 		rightMatrix = rightMatrix * -1;
 		
